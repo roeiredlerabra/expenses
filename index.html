@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>דוח החזר הוצאות</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/4.1.5/signature_pad.umd.min.js"></script>
+<style>
+    :root {
+        /* Premium color palette */
+        --primary-dark: #1a237e;    /* Deep blue */
+        --primary-light: #534bae;
+        --secondary-dark: #424242;  /* Dark gray */
+        --secondary-light: #616161;
+        --accent: #c2185b;         /* Deep pink */
+        
+        /* Section colors */
+        --fuel-color: #3949ab;     /* Indigo */
+        --parking-color: #5c6bc0;   /* Lighter indigo */
+        --other-color: #7986cb;     /* Lightest indigo */
+        
+        /* Light backgrounds */
+        --fuel-light: rgba(57, 73, 171, 0.05);
+        --parking-light: rgba(92, 107, 192, 0.05);
+        --other-light: rgba(121, 134, 203, 0.05);
+    }
+.expense-type-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.expense-type-label i {
+    font-size: 1.25rem;
+}
+
+.expense-type-label span {
+    font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+    .expense-type-label {
+        padding-bottom: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .expense-type-label i {
+        font-size: 1.1rem;
+    }
+    
+    .expense-type-label span {
+        font-size: 1rem;
+    }
+}
+    body {
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        background-color: #f8f9fa;
+        color: var(--secondary-dark);
+    }
+
+    .header {
+        background: linear-gradient(135deg, var(--primary-dark), var(--primary-light));
+        padding: 1.5rem 0;
+        color: white;
+        margin-bottom: 2rem;
+        border-bottom: 4px solid var(--accent);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .section-card {
+        border: 1px solid rgba(0,0,0,0.08);
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+        background-color: white;
+    }
+
+    .section-header {
+        padding: 1rem;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+    }
+
+    .section-header i {
+        font-size: 1.5rem;
+        margin-left: 0.5rem;
+    }
+
+    .section-header[style*="background-color"] {
+        background-color: var(--secondary-dark) !important;
+    }
+
+    .section-header.fuel {
+        background-color: var(--fuel-color);
+    }
+
+    .section-header.parking {
+        background-color: var(--parking-color);
+    }
+
+    .section-header.other {
+        background-color: var(--other-color);
+    }
+
+    .section-content {
+        padding: 1.5rem;
+        display: none;
+        background-color: white;
+    }
+
+    .section-content.active {
+        display: block;
+    }
+
+    .section-content.fuel {
+        background-color: var(--fuel-light);
+    }
+
+    .section-content.parking {
+        background-color: var(--parking-light);
+    }
+
+    .section-content.other {
+        background-color: var(--other-light);
+    }
+
+    .expense-row {
+        background-color: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        border-left: 4px solid var(--primary-light);
+        transition: all 0.3s ease;
+    }
+
+    .expense-row:hover {
+        transform: translateX(-5px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .signature-section {
+        background: linear-gradient(135deg, rgba(26, 35, 126, 0.02), rgba(26, 35, 126, 0.05));
+        padding: 2rem;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        margin-top: 2rem;
+    }
+
+    .signature-pad {
+        border: 2px dashed var(--primary-light);
+        border-radius: 10px;
+        background-color: white;
+        width: 100%;
+        max-width: 300px;
+        height: 100px;
+        margin: 0 auto;
+        touch-action: none;
+    }
+
+    .section-toggle {
+        background-color: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .section-toggle .form-check {
+        margin: 0.75rem 0;
+    }
+
+    .floating-total {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        background: var(--primary-dark);
+        color: white;
+        font-weight: 500;
+        padding: 1rem 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        z-index: 1000;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background-color: var(--primary-dark);
+        border-color: var(--primary-dark);
+        padding: 0.75rem 2rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        background-color: var(--primary-light);
+        border-color: var(--primary-light);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary-light);
+        box-shadow: 0 0 0 0.25rem rgba(26, 35, 126, 0.25);
+    }
+
+    .form-label {
+        color: var(--secondary-dark);
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+
+    .add-expense-btn {
+        border: 2px solid;
+        font-weight: 500;
+        padding: 0.75rem 1.5rem;
+        transition: all 0.3s ease;
+        color: var(--primary-dark);
+        border-color: var(--primary-dark);
+    }
+
+    .add-expense-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        background-color: var(--primary-dark);
+        color: white;
+    }
+
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(26, 35, 126, 0.15);
+        backdrop-filter: blur(4px);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1001;
+        min-width: 300px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+
+    @media (max-width: 768px) {
+        .header h1 {
+            font-size: 1.5rem;
+        }
+        
+        .container {
+            padding: 0.75rem;
+        }
+        
+        .section-card {
+            margin: 0.75rem 0;
+        }
+
+        .expense-row {
+            padding: 1rem;
+        }
+
+        .form-label {
+            margin-bottom: 0.25rem;
+        }
+
+        .btn-delete {
+            padding: 0.25rem 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .section-content .row > div {
+            margin-bottom: 0.5rem;
+        }
+
+        .floating-total {
+            left: 10px;
+            right: 10px;
+            padding: 0.75rem;
+            text-align: center;
+            bottom: 10px;
+        }
+
+        .add-expense-btn {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+
+        .signature-section {
+            padding: 1rem;
+        }
+
+        .signature-pad {
+            max-width: 100%;
+        }
+    }
+
+    /* Animation classes */
+    .animate__animated {
+        animation-duration: 0.5s;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: var(--primary-light);
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--primary-dark);
+    }
+
+    /* Input placeholder styles */
+    ::placeholder {
+        color: rgba(97, 97, 97, 0.5);
+    }
+
+    /* Selection color */
+    ::selection {
+        background: var(--primary-light);
+        color: white;
+    }
+
+    /* Focus visible outline */
+    :focus-visible {
+        outline: 2px solid var(--primary-light);
+        outline-offset: 2px;
+    }
+</style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-3 col-4">
+                    <img src="/api/placeholder/120/40" alt="Company Logo" class="img-fluid">
+                </div>
+                <div class="col-md-9 col-8 text-end">
+                    <h1 class="h3 mb-0">דוח החזר הוצאות</h1>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container mb-5">
+        <form id="expenseForm" class="pb-5">
+            <!-- Basic Info Card -->
+            <div class="section-card">
+                <div class="section-header" style="background-color: #34495e;">
+                    <i class="fas fa-user"></i>
+                    <span>פרטים אישיים</span>
+                </div>
+                <div class="section-content active" style="background-color: white;">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">חודש</label>
+                            <input type="month" class="form-control" name="month" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">שם עובד/ת</label>
+                            <input type="text" class="form-control" name="employeeName" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">חטיבה/מחלקה</label>
+                            <input type="text" class="form-control" name="department" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+<div class="d-flex gap-2 flex-wrap mb-4">
+    <button type="button" class="btn add-expense-btn btn-outline-primary" onclick="addExpenseRow('fuelExpenses')">
+        <i class="fas fa-gas-pump"></i> הוסף הוצאת דלק
+    </button>
+
+    <button type="button" class="btn add-expense-btn btn-outline-primary" onclick="addExpenseRow('parkingExpenses')">
+        <i class="fas fa-parking"></i> הוסף הוצאת חניה
+    </button>
+
+    <button type="button" class="btn add-expense-btn btn-outline-primary" onclick="addExpenseRow('otherExpenses')">
+        <i class="fas fa-receipt"></i> הוסף הוצאה אחרת
+    </button>
+</div>
+
+           <div id="fuelExpenses" class="expense-container"></div>
+<div id="parkingExpenses" class="expense-container"></div>
+<div id="otherExpenses" class="expense-container"></div>
+
+            <!-- Signatures Section -->
+            <div class="signature-section">
+                <h5 class="mb-3">חתימות</h5>
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <label class="form-label">חתימת העובד</label>
+                        <canvas id="employeeSignature" class="signature-pad"></canvas>
+                        <button type="button" class="btn btn-outline-secondary btn-sm mt-2 w-100" onclick="clearSignature('employeeSignature')">
+                            <i class="fas fa-eraser"></i> נקה חתימה
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">חתימת המנהל</label>
+                        <canvas id="managerSignature" class="signature-pad"></canvas>
+                        <button type="button" class="btn btn-outline-secondary btn-sm mt-2 w-100" onclick="clearSignature('managerSignature')">
+                            <i class="fas fa-eraser"></i> נקה חתימה
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">חתימה פרוודוור</label>
+                        <canvas id="provadorSignature" class="signature-pad"></canvas>
+                        <button type="button" class="btn btn-outline-secondary btn-sm mt-2 w-100" onclick="clearSignature('provadorSignature')">
+                            <i class="fas fa-eraser"></i> נקה חתימה
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-paper-plane"></i> שלח דוח
+                </button>
+            </div>
+        </form>
+
+        <!-- Floating Total -->
+        <div class="floating-total">
+            <div class="row align-items-center">
+                <div class="col">
+                    <strong>סה"כ הוצאות:</strong>
+                    <span id="grandTotal">0</span> ₪
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">טוען...</span>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification animate__animated animate__fadeInRight d-none">
+        <div class="alert" role="alert">
+            <strong class="alert-heading"></strong>
+            <span class="notification-message"></span>
+        </div>
+    </div>
+
+    <script>
+     // Template for expense rows
+const expenseRowTemplates = {
+    fuel: `
+        <div class="expense-row animate__animated animate__fadeIn">
+            <div class="expense-type-label" style="color: var(--fuel-color)">
+                <i class="fas fa-gas-pump"></i>
+                <span>הוצאת דלק</span>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-3 col-6">
+                    <label class="form-label">תאריך</label>
+                    <input type="date" class="form-control" name="fuelDate[]">
+                </div>
+                <div class="col-md-3 col-6">
+                    <label class="form-label">מספר חשבונית</label>
+                    <input type="text" class="form-control" name="fuelInvoice[]">
+                </div>
+                <div class="col-md-3 col-6">
+                    <label class="form-label">פירוט</label>
+                    <input type="text" class="form-control" name="fuelDetails[]">
+                </div>
+                <div class="col-md-2 col-6">
+                    <label class="form-label">סכום</label>
+                    <input type="number" step="0.01" class="form-control fuel-amount" name="fuelAmount[]">
+                </div>
+                <div class="col-md-1 col-12 text-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm mt-2 w-100" onclick="removeExpenseRow(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            
+        </div>
+        
+    `,
+    parking: `
+        <div class="expense-row animate__animated animate__fadeIn">
+            <div class="expense-type-label" style="color: var(--parking-color)">
+                <i class="fas fa-parking"></i>
+                <span>הוצאת חניה</span>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-2 col-6">
+                    <label class="form-label">תאריך</label>
+                    <input type="date" class="form-control" name="parkingDate[]">
+                </div>
+                <div class="col-md-2 col-6">
+                    <label class="form-label">מספר חשבונית</label>
+                    <input type="text" class="form-control" name="parkingInvoice[]">
+                </div>
+                <div class="col-md-3 col-12">
+                    <label class="form-label">מיקום הלקוח/פגישה</label>
+                    <input type="text" class="form-control" name="parkingLocation[]">
+                </div>
+                <div class="col-md-2 col-6">
+                    <label class="form-label">לחיוב לקוח</label>
+                    <select class="form-select" name="parkingBillable[]">
+                        <option value="no">לא</option>
+                        <option value="yes">כן</option>
+                    </select>
+                </div>
+                <div class="col-md-2 col-6">
+                    <label class="form-label">סכום</label>
+                    <input type="number" step="0.01" class="form-control parking-amount" name="parkingAmount[]">
+                </div>
+                <div class="col-md-1 col-12 text-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm mt-2 w-100" onclick="removeExpenseRow(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `,
+    other: `
+        <div class="expense-row animate__animated animate__fadeIn">
+            <div class="expense-type-label" style="color: var(--other-color)">
+                <i class="fas fa-receipt"></i>
+                <span>הוצאה אחרת</span>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-2 col-6">
+                    <label class="form-label">תאריך</label>
+                    <input type="date" class="form-control" name="otherDate[]">
+                </div>
+                <div class="col-md-2 col-6">
+                    <label class="form-label">מספר חשבונית</label>
+                    <input type="text" class="form-control" name="otherInvoice[]">
+                </div>
+                <div class="col-md-3 col-12">
+                    <label class="form-label">פירוט ההוצאה</label>
+                    <input type="text" class="form-control" name="otherDetails[]">
+                </div>
+                <div class="col-md-2 col-6">
+                    <label class="form-label">לחיוב לקוח</label>
+                    <select class="form-select" name="otherBillable[]">
+                        <option value="no">לא</option>
+                        <option value="yes">כן</option>
+                    </select>
+                </div>
+                <div class="col-md-2 col-6">
+                    <label class="form-label">סכום</label>
+                    <input type="number" step="0.01" class="form-control other-amount" name="otherAmount[]">
+                </div>
+                <div class="col-md-1 col-12 text-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm mt-2 w-100" onclick="removeExpenseRow(this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `
+};
+
+// Toggle expense sections based on checkboxes
+document.querySelectorAll('[name="expenseTypes"]').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        const sectionId = this.id.replace('Toggle', 'Section');
+        const section = document.getElementById(sectionId);
+        const expenseType = this.id.replace('ExpensesToggle', '').toLowerCase();
+        const expenseContainer = document.getElementById(`${expenseType}Expenses`);
+        
+        if (this.checked) {
+            section.style.display = 'block';
+            // Add initial row if none exists
+            if (expenseContainer && expenseContainer.children.length === 0) {
+                const template = expenseRowTemplates[expenseType];
+                expenseContainer.innerHTML = template;
+            }
+        } else {
+            section.style.display = 'none';
+            // Optionally clear expenses when unchecked
+            if (expenseContainer) {
+                expenseContainer.innerHTML = '';
+            }
+        }
+        updateTotals();
+    });
+});
+
+// Add new expense row
+function addExpenseRow(sectionId) {
+    const section = document.getElementById(sectionId);
+    const type = sectionId.replace('Expenses', '');
+    const template = expenseRowTemplates[type];
+    
+    if (template) {
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = template;
+        section.appendChild(wrapper.firstElementChild);
+        
+        // Scroll to the new row
+        wrapper.firstElementChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        updateTotals();
+    }
+}
+
+// Remove expense row with animation
+function removeExpenseRow(button) {
+    const row = button.closest('.expense-row');
+    const section = row.closest('[id$="Expenses"]');
+    
+    row.classList.remove('animate__fadeIn');
+    row.classList.add('animate__fadeOut');
+    
+    row.addEventListener('animationend', () => {
+        row.remove();
+        // If this was the last row and section is unchecked, hide the section
+        if (section && section.children.length === 0) {
+            const checkboxId = section.id.replace('s', 'Toggle');
+            const checkbox = document.getElementById(checkboxId);
+            if (checkbox) {
+                checkbox.checked = false;
+                const sectionContainer = section.closest('[id$="Section"]');
+                if (sectionContainer) {
+                    sectionContainer.style.display = 'none';
+                }
+            }
+        }
+        updateTotals();
+    });
+}
+
+        // Initialize signature pads
+        const signaturePads = {
+            employeeSignature: new SignaturePad(document.getElementById('employeeSignature')),
+            managerSignature: new SignaturePad(document.getElementById('managerSignature')),
+            provadorSignature: new SignaturePad(document.getElementById('provadorSignature'))
+        };
+
+        // Toggle expense sections based on checkboxes
+        document.querySelectorAll('[name="expenseTypes"]').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const sectionId = this.id.replace('Toggle', 'Section');
+                const section = document.getElementById(sectionId);
+                
+                if (this.checked) {
+                    section.style.display = 'block';
+                    // Add initial row if none exists
+                    const container = section.querySelector(`#${this.id.replace('Toggle', 's')}`);
+                    if (container && container.children.length === 0) {
+                        addExpenseRow(container.id);
+                    }
+                } else {
+                    section.style.display = 'none';
+                }
+            });
+        });
+
+
+
+        // Update totals with animation
+function updateTotals() {
+    let grandTotal = 0;
+    
+    // Calculate totals for each expense type
+    ['fuel', 'parking', 'other'].forEach(type => {
+        const amounts = document.querySelectorAll(`.${type}-amount`);
+        const total = Array.from(amounts).reduce((sum, input) => {
+            const value = parseFloat(input.value) || 0;
+            return sum + value;
+        }, 0);
+        grandTotal += total;
+    });
+
+    // Animate the total change
+    const currentTotal = parseFloat(document.getElementById('grandTotal').textContent) || 0;
+    animateNumber(currentTotal, grandTotal, 300);
+}
+
+// Add input event listeners for amount fields
+document.addEventListener('input', function(e) {
+    if (e.target.matches('.fuel-amount, .parking-amount, .other-amount')) {
+        updateTotals();
+    }
+});
+
+        // Form submission
+        document.getElementById('expenseForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            // Show loading overlay
+            document.querySelector('.loading-overlay').style.display = 'flex';
+
+            try {
+                // Collect form data
+                const formData = new FormData(this);
+                const data = {
+                    employeeInfo: {
+                        month: formData.get('month'),
+                        name: formData.get('employeeName'),
+                        department: formData.get('department')
+                    },
+                    signatures: {
+                        employee: signaturePads.employeeSignature.isEmpty() ? null : signaturePads.employeeSignature.toDataURL(),
+                        manager: signaturePads.managerSignature.isEmpty() ? null : signaturePads.managerSignature.toDataURL(),
+                        provador: signaturePads.provadorSignature.isEmpty() ? null : signaturePads.provadorSignature.toDataURL()
+                    },
+                    expenses: {
+                        fuel: collectExpenseData('fuel'),
+                        parking: collectExpenseData('parking'),
+                        other: collectExpenseData('other')
+                    }
+                };
+
+                // Send to API
+                const response = await fetch('https://mp2708309e344b142b22.free.beeceptor.com', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    throw new Error('שגיאה בשליחת הטופס');
+                }
+
+                showNotification('הטופס נשלח בהצלחה!', 'success');
+                
+                // Optional: Reset form
+                // this.reset();
+                // Object.values(signaturePads).forEach(pad => pad.clear());
+
+            } catch (error) {
+                console.error('Error:', error);
+                showNotification('שגיאה בשליחת הטופס: ' + error.message, 'danger');
+            } finally {
+                document.querySelector('.loading-overlay').style.display = 'none';
+            }
+        });
+
+        // Helper function to collect expense data
+        function collectExpenseData(type) {
+            const container = document.getElementById(`${type}Expenses`);
+            if (!container || container.children.length === 0) return [];
+
+            return Array.from(container.children).map(row => {
+                const data = {
+                    date: row.querySelector(`[name="${type}Date[]"]`)?.value || null,
+                    invoice: row.querySelector(`[name="${type}Invoice[]"]`)?.value || null,
+                    amount: row.querySelector(`[name="${type}Amount[]"]`)?.value || null
+                };
+
+                if (type === 'parking' || type === 'other') {
+                    data.billable = row.querySelector(`[name="${type}Billable[]"]`)?.value || 'no';
+                    data.details = row.querySelector(`[name="${type}${type === 'parking' ? 'Location' : 'Details'}[]"]`)?.value || null;
+                } else {
+                    data.details = row.querySelector(`[name="${type}Details[]"]`)?.value || null;
+                }
+
+                return data;
+            });
+        }
+
+        // Show notification function
+        function showNotification(message, type = 'success') {
+            const notification = document.querySelector('.notification');
+            const alert = notification.querySelector('.alert');
+            const messageEl = notification.querySelector('.notification-message');
+            
+            alert.className = `alert alert-${type}`;
+            messageEl.textContent = message;
+            
+            notification.classList.remove('d-none', 'animate__fadeOutRight');
+            notification.classList.add('animate__fadeInRight');
+            
+            setTimeout(() => {
+                notification.classList.remove('animate__fadeInRight');
+                notification.classList.add('animate__fadeOutRight');
+                setTimeout(() => notification.classList.add('d-none'), 1000);
+            }, 5000);
+        }
+
+        // Clear signature
+        function clearSignature(id) {
+            signaturePads[id]?.clear();
+        }
+
+        // Initialize responsive functionality
+        function initResponsive() {
+            if (window.innerWidth <= 768) {
+                document.querySelectorAll('.signature-pad').forEach(canvas => {
+                    canvas.style.width = '100%';
+                });
+            }
+        }
+        // Number animation function
+function animateNumber(start, end, duration) {
+    const element = document.getElementById('grandTotal');
+    const range = end - start;
+    const startTime = performance.now();
+    
+    function updateNumber(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        const current = start + (range * progress);
+        element.textContent = current.toFixed(2);
+        
+        if (progress < 1) {
+            requestAnimationFrame(updateNumber);
+        }
+    }
+    
+    requestAnimationFrame(updateNumber);
+}
+
+// Make sure to also update totals when removing rows
+function removeExpenseRow(button) {
+    const row = button.closest('.expense-row');
+    const section = row.closest('[id$="Expenses"]');
+    
+    row.classList.remove('animate__fadeIn');
+    row.classList.add('animate__fadeOut');
+    
+    row.addEventListener('animationend', () => {
+        row.remove();
+        updateTotals(); // Update totals after removing row
+    });
+}
+
+        window.addEventListener('load', initResponsive);
+        window.addEventListener('resize', initResponsive);
+    </script>
+</body>
+</html>
