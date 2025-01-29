@@ -26,6 +26,74 @@
             min-height: 100vh;
             padding-bottom: 80px;
         }
+         /* New styles for file upload */
+         .file-drop-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            text-align: center;
+            background: #f8fafc;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .file-drop-zone.drag-over {
+            border-color: var(--primary);
+            background: #eff6ff;
+        }
+
+        .file-preview {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .file-preview-item {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+
+        .file-preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .file-preview-item .file-remove {
+            position: absolute;
+            top: 0.25rem;
+            right: 0.25rem;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--danger);
+            border: none;
+        }
+
+        .pdf-preview {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: #f8fafc;
+            border-radius: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .pdf-preview i {
+            color: #dc2626;
+            font-size: 1.5rem;
+        }
 
  .company-logo {
             width: auto;
@@ -477,7 +545,152 @@
                 }
             );
         }
+        function quickAdd(type) {
+            const container = document.getElementById('expensesContainer');
+            const today = new Date().toISOString().split('T')[0];
+            
+            const card = document.createElement('div');
+            card.className = 'expense-card animate__animated animate__fadeIn';
+            
+            let typeLabel, typeIcon, typeClass;
+            switch(type) {
+                case 'fuel':
+                    typeLabel = 'דלק';
+                    typeIcon = 'gas-pump';
+                    typeClass = 'fuel';
+                    break;
+                case 'parking':
+                    typeLabel = 'חניה';
+                    typeIcon = 'parking';
+                    typeClass = 'parking';
+                    break;
+                case 'other':
+                    typeLabel = 'הוצאה אחרת';
+                    typeIcon = 'receipt';
+                    typeClass = 'other';
+                    break;
+            }
+            
+            card.innerHTML = `
+                <div class="expense-type-indicator expense-type-${typeClass}">
+                    <i class="fas fa-${typeIcon}"></i>
+                    ${typeLabel}
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">תאריך</label>
+                        <input type="date" class="form-control" value="${today}" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">מספר חשבונית</label>
+                        <input type="text" class="form-control" placeholder="הזן מספר חשבונית" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">סכום</label>
+                        <div class="input-group">
+                            <input type="number" step="0.01" class="form-control expense-amount" required>
+                            <span class="input-group-text">₪</span>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-outline-danger w-100" onclick="removeExpenseRow(this)">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    <div class="col-12">
+                        <div class="file-drop-zone" ondrop="handleFileDrop(event, this)" 
+                             ondragover="handleDragOver(event)" 
+                             ondragleave="handleDragLeave(event)">
+                            <i class="fas fa-cloud-upload-alt mb-2" style="font-size: 2rem;"></i>
+                            <div>גרור קבצים לכאן או לחץ להעלאה</div>
+                            <div class="text-muted">(תמונות או PDF בלבד)</div>
+                            <input type="file" class="d-none" accept="image/*,.pdf" multiple 
+                                   onchange="handleFileSelect(event, this.parentElement)">
+                        </div>
+                        <div class="file-preview"></div>
+                    </div>
+                </div>
+            `;
+            
+            container.insertBefore(card, container.firstChild);
+            updateTotal();
+            
+            // Add click handler for file upload zone
+            const dropZone = card.querySelector('.file-drop-zone');
+            dropZone.addEventListener('click', () => {
+                dropZone.querySelector('input[type="file"]').click();
+            });
+        }
 
+        // New functions for file handling
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.currentTarget.classList.add('drag-over');
+        }
+
+        function handleDragLeave(event) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('drag-over');
+        }
+
+        function handleFileDrop(event, dropZone) {
+            event.preventDefault();
+            dropZone.classList.remove('drag-over');
+            
+            const files = event.dataTransfer.files;
+            handleFiles(files, dropZone);
+        }
+
+        function handleFileSelect(event, dropZone) {
+            const files = event.target.files;
+            handleFiles(files, dropZone);
+        }
+
+        function handleFiles(files, dropZone) {
+            const validFiles = Array.from(files).filter(file => {
+                const type = file.type.toLowerCase();
+                return type.startsWith('image/') || type === 'application/pdf';
+            });
+
+            if (validFiles.length !== files.length) {
+                showNotification('רק קבצי תמונה ו-PDF מותרים להעלאה', 'warning');
+            }
+
+            const previewContainer = dropZone.nextElementSibling;
+
+            validFiles.forEach(file => {
+                if (file.type === 'application/pdf') {
+                    const pdfPreview = document.createElement('div');
+                    pdfPreview.className = 'pdf-preview';
+                    pdfPreview.innerHTML = `
+                        <i class="fas fa-file-pdf"></i>
+                        <span>${file.name}</span>
+                        <button type="button" class="btn btn-sm btn-link text-danger" onclick="removeFile(this)">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    previewContainer.appendChild(pdfPreview);
+                } else {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const preview = document.createElement('div');
+                        preview.className = 'file-preview-item';
+                        preview.innerHTML = `
+                            <img src="${e.target.result}" alt="Preview">
+                            <button type="button" class="file-remove" onclick="removeFile(this)">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        `;
+                        previewContainer.appendChild(preview);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        function removeFile(button) {
+            button.closest('.file-preview-item, .pdf-preview').remove();
+        }
         // Animate number changes
         function animateNumber(start, end, options) {
             const startTime = performance.now();
@@ -612,11 +825,21 @@ document.getElementById('expenseForm').addEventListener('submit', async (e) => {
             const expenses = [];
             document.querySelectorAll('.expense-card').forEach(card => {
                 const type = card.querySelector('.expense-type-indicator').textContent.trim();
+                const fileElements = card.querySelectorAll('.file-preview-item img, .pdf-preview');
+                const files = Array.from(fileElements).map(el => {
+                    if (el.tagName === 'IMG') {
+                        return { type: 'image', data: el.src };
+                    } else {
+                        return { type: 'pdf', name: el.querySelector('span').textContent };
+                    }
+                });
+
                 expenses.push({
                     type: type,
                     date: card.querySelector('input[type="date"]').value,
                     invoice: card.querySelector('input[placeholder="הזן מספר חשבונית"]').value,
-                    amount: parseFloat(card.querySelector('.expense-amount').value) || 0
+                    amount: parseFloat(card.querySelector('.expense-amount').value) || 0,
+                    files: files
                 });
             });
             return expenses;
