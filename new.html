@@ -1144,12 +1144,69 @@ button:disabled {
         }
         function initSignaturePad(elementId) {
     const canvas = document.getElementById(elementId);
+    const rect = canvas.getBoundingClientRect();
+    
+    // Set canvas size to match display size
+    canvas.width = rect.width * window.devicePixelRatio;
+    canvas.height = rect.height * window.devicePixelRatio;
+    
+    // Scale the canvas context
+    const ctx = canvas.getContext('2d');
+    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    
+    // Configure SignaturePad with proper coordinates
     const pad = new SignaturePad(canvas, {
         penColor: getSignatureColor(),
-        backgroundColor: 'transparent'  // Make background transparent to use CSS background
+        backgroundColor: 'transparent',
+        velocityFilterWeight: 0.5,
+        minWidth: 0.5,
+        maxWidth: 2.5,
+        throttle: 16, // Optimize for 60fps
+        minDistance: 0.5,
     });
-    
-    // Update signature color when theme changes
+
+    // Add coordinate transformation
+    function updateCoordinates(event) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        
+        if (event.touches && event.touches[0]) {
+            // Touch events (mobile)
+            return {
+                x: (event.touches[0].clientX - rect.left) * scaleX,
+                y: (event.touches[0].clientY - rect.top) * scaleY
+            };
+        } else {
+            // Mouse events (desktop)
+            return {
+                x: (event.clientX - rect.left) * (canvas.width / rect.width),
+                y: (event.clientY - rect.top) * (canvas.height / rect.height)
+            };
+        }
+    }
+
+    // Handle window resize
+    const resizeCanvas = () => {
+        const data = pad.toData();
+        const rect = canvas.getBoundingClientRect();
+        
+        canvas.width = rect.width * window.devicePixelRatio;
+        canvas.height = rect.height * window.devicePixelRatio;
+        
+        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        pad.fromData(data);
+    };
+
+    window.addEventListener('resize', resizeCanvas);
+
+    // Override point creation for better accuracy
+    pad._handlePointerMove = function(event) {
+        const point = updateCoordinates(event);
+        this._addPoint(point);
+    };
+
+    // Update theme observer as before
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
             if (mutation.attributeName === 'data-theme') {
@@ -1162,7 +1219,7 @@ button:disabled {
         attributes: true,
         attributeFilter: ['data-theme']
     });
-    
+
     return pad;
 }
 
@@ -1170,14 +1227,21 @@ function getSignatureColor() {
     const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
     return isDarkMode ? '#ffffff' : '#121f3f'; // White for dark mode, Abra navy for light mode
 }
-        function clearSignature(id) {
+function clearSignature(id) {
     if (signaturePads[id]) {
+        const canvas = document.getElementById(id);
+        const ctx = canvas.getContext('2d');
+        
+        // Clear with proper scaling
+        ctx.save();
+        ctx.scale(1 / window.devicePixelRatio, 1 / window.devicePixelRatio);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
+        
         signaturePads[id].clear();
-        // Reset pen color after clearing
         signaturePads[id].penColor = getSignatureColor();
     }
 }
-
         function updateTotal() {
             const amounts = document.querySelectorAll('.expense-amount');
             const total = Array.from(amounts).reduce((sum, input) => {
