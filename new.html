@@ -206,7 +206,21 @@
 }
 
 [data-theme="dark"] .signature-pad {
-    background: var(--bg-secondary);
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+[data-theme="dark"] .signature-pad:hover {
+    border-color: var(--abra-coral);
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='white' viewBox='0 0 24 24'><circle cx='12' cy='12' r='6' fill-opacity='0.4'/><circle cx='12' cy='12' r='3'/></svg>") 12 12,
+    crosshair; /* Fallback */
+}
+[data-theme="dark"] .signature-pad:active {
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='white' viewBox='0 0 24 24'><circle cx='12' cy='12' r='8' fill-opacity='0.6'/><circle cx='12' cy='12' r='4'/></svg>") 12 12,
+        crosshair; /* Fallback */
+}
+.signature-pad:active {
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='rgb(255, 119, 72)' viewBox='0 0 24 24'><circle cx='12' cy='12' r='8' fill-opacity='0.6'/><circle cx='12' cy='12' r='4'/></svg>") 12 12,
+        crosshair; /* Fallback */
 }
 /* Base Styles */
 body {
@@ -566,10 +580,14 @@ h1, h2, h3, h4, h5, h6 {
     height: 150px;
     margin-bottom: 0.5rem;
     transition: all 0.2s ease;
+    cursor: crosshair; /* Default cursor before interaction */
+    touch-action: none;
 }
 
 .signature-pad:hover {
     border-color: var(--abra-coral);
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='rgb(255, 119, 72)' viewBox='0 0 24 24'><circle cx='12' cy='12' r='6' fill-opacity='0.4'/><circle cx='12' cy='12' r='3'/></svg>") 12 12,
+    crosshair; /* Fallback */
 }
 [data-theme="dark"]  .signature-pad{
     border-color: var(--abra-coral);
@@ -768,7 +786,20 @@ button:disabled {
     border: none;
     padding: 1rem 1.5rem;
 }
+[data-theme="dark"] .expense-type-fuel {
+    background-color: rgba(255, 119, 72, 0.2);
+    color: var(--abra-coral);
+}
 
+[data-theme="dark"] .expense-type-parking {
+    background-color: rgba(255, 82, 136, 0.2);
+    color: var(--abra-pink);
+}
+
+[data-theme="dark"] .expense-type-other {
+    background-color: rgba(255, 159, 0, 0.2);
+    color: var(--abra-yellow);
+}
 .alert-success {
     background: var(--coral-light);
     color: var(--abra-coral);
@@ -1034,10 +1065,10 @@ button:disabled {
     <script>
         // Initialize signature pads
         const signaturePads = {
-            employeeSignature: new SignaturePad(document.getElementById('employeeSignature')),
-            managerSignature: new SignaturePad(document.getElementById('managerSignature')),
-            provadorSignature: new SignaturePad(document.getElementById('provadorSignature'))
-        };
+    employeeSignature: initSignaturePad('employeeSignature'),
+    managerSignature: initSignaturePad('managerSignature'),
+    provadorSignature: initSignaturePad('provadorSignature')
+};
 
         function quickAdd(type) {
             const container = document.getElementById('expensesContainer');
@@ -1111,12 +1142,41 @@ button:disabled {
                 updateTotal();
             });
         }
-
-        function clearSignature(id) {
-            if (signaturePads[id]) {
-                signaturePads[id].clear();
+        function initSignaturePad(elementId) {
+    const canvas = document.getElementById(elementId);
+    const pad = new SignaturePad(canvas, {
+        penColor: getSignatureColor(),
+        backgroundColor: 'transparent'  // Make background transparent to use CSS background
+    });
+    
+    // Update signature color when theme changes
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.attributeName === 'data-theme') {
+                pad.penColor = getSignatureColor();
             }
-        }
+        });
+    });
+    
+    observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['data-theme']
+    });
+    
+    return pad;
+}
+
+function getSignatureColor() {
+    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+    return isDarkMode ? '#ffffff' : '#121f3f'; // White for dark mode, Abra navy for light mode
+}
+        function clearSignature(id) {
+    if (signaturePads[id]) {
+        signaturePads[id].clear();
+        // Reset pen color after clearing
+        signaturePads[id].penColor = getSignatureColor();
+    }
+}
 
         function updateTotal() {
             const amounts = document.querySelectorAll('.expense-amount');
