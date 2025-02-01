@@ -3,107 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>דוח החזר הוצאות</title>
+    <title>דוח החזר הוצאות | Abra</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.rtl.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/4.1.5/signature_pad.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
     <style>
-       /* CSS Variables */
+/* CSS Variables */
 :root {
-    /* Colors */
-    --primary: #2563eb;
-    --primary-dark: #1d4ed8;
-    --secondary: #64748b;
-    --success: #059669;
-    --danger: #dc2626;
-    --warning: #d97706;
-    --background: #f8fafc;
-    --card: #ffffff;
+    /* Brand Colors */
+    --abra-navy: rgb(18, 31, 63);      /* #121f3f */
+    --abra-coral: rgb(255, 119, 72);   /* #ff7748 */
+    --abra-pink: rgb(255, 82, 136);    /* #ff5288 */
+    --abra-yellow: rgb(255, 159, 0);   /* #ff9f00 */
+    --abra-white: rgb(252, 249, 245);  /* #fcf9f5 */
     
-    /* Gradients */
-    --header-gradient: linear-gradient(135deg, #1a237e, #0d47a1);
+    /* Secondary Colors */
+    --coral-light: rgba(255, 119, 72, 0.1);
+    --pink-light: rgba(255, 82, 136, 0.1);
+    --yellow-light: rgba(255, 159, 0, 0.1);
+    --navy-light: rgba(18, 31, 63, 0.1);
+    
+    /* Typography */
+    --font-heading: 'Sharp Sans No1', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-body: 'Simpler Pro', -apple-system, BlinkMacSystemFont, sans-serif;
     
     /* Shadows */
-    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-sm: 0 2px 4px rgba(18, 31, 63, 0.05);
+    --shadow-md: 0 4px 12px rgba(18, 31, 63, 0.1);
+    --shadow-lg: 0 8px 24px rgba(18, 31, 63, 0.15);
     
-    /* Border Colors */
-    --border-light: rgb(226 232 240);
+    /* Border Radius */
+    --radius-sm: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-full: 9999px;
+    --font-heading: 'Sharp Sans No1', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-body: 'Simpler Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+@font-face {
+    font-family: 'Sharp Sans No1';
+    src: url('./fonts/SharpSansNo1-Bold.otf') format('opentype');
+    font-weight: 700;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Simpler Pro';
+    src: url('./fonts/SimplerPro-Bold.otf') format('opentype');
+    font-weight: 700;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Simpler Pro';
+    src: url('./fonts/SimplerPro-Regular.otf') format('opentype');
+    font-weight: 400;
+    font-style: normal;
 }
 
 /* Base Styles */
 body {
-    background-color: var(--background);
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background-color: var(--abra-white);
+    font-family: var(--font-body);
+    color: var(--abra-navy);
+    line-height: 1.5;
     min-height: 100vh;
     padding-bottom: 80px;
 }
 
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-weight: bold;
+    line-height: 1.2;
+}
+
 /* Header Styles */
 .header {
-    background: var(--header-gradient);
-    padding: 1rem;
-
+    background: var(--abra-navy);
+    padding: 1.5rem;
+    position: sticky;
     top: 0;
     z-index: 1000;
     box-shadow: var(--shadow-md);
     transition: all 0.3s ease;
 }
+/* English Headings */
+.heading-en {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
 
+/* Hebrew Headings */
+.heading-he {
+    font-family: var(--font-body);
+    font-weight: 700;
+}
+
+/* Body Text - English */
+.body-en {
+    font-family: var(--font-body);
+    font-weight: 400;
+}
+
+/* Body Text - Hebrew */
+.body-he {
+    font-family: var(--font-body);
+    font-weight: 400;
+}
+
+/* Typography Scale */
+.text-display {
+    font-size: 3.5rem;
+    line-height: 1.1;
+}
+
+.text-h1 {
+    font-size: 2.5rem;
+    line-height: 1.2;
+}
+
+.text-h2 {
+    font-size: 2rem;
+    line-height: 1.2;
+}
+
+.text-h3 {
+    font-size: 1.75rem;
+    line-height: 1.2;
+}
+
+.text-h4 {
+    font-size: 1.5rem;
+    line-height: 1.25;
+}
+
+.text-h5 {
+    font-size: 1.25rem;
+    line-height: 1.25;
+}
+
+.text-h6 {
+    font-size: 1.125rem;
+    line-height: 1.25;
+}
+
+.text-body-lg {
+    font-size: 1.125rem;
+    line-height: 1.5;
+}
+
+.text-body {
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.text-body-sm {
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.text-caption {
+    font-size: 0.75rem;
+    line-height: 1.5;
+}
 .header.scrolled {
-    background: rgba(26, 35, 126, 0.85);
-    backdrop-filter: blur(10px);
-    padding: 0.75rem;
+    padding: 1rem;
+    background: rgba(18, 31, 63, 0.95);
+    backdrop-filter: blur(8px);
 }
 
 .header-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 1rem;
+    gap: 1.5rem;
 }
 
 .header-title {
     color: white;
+    font-size: 2rem;
+    font-weight: bold;
     margin: 0;
-    font-size: 1.5rem;
-    font-weight: 600;
     position: relative;
-    padding-bottom: 0.25rem;
 }
 
-.header-title::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 0;
-    height: 2px;
-    background: #fff;
-    transition: width 0.3s ease;
-}
-
-.header-title:hover::after {
-    width: 100%;
-}
-
-/* Logo Styles */
 .logo-container {
     min-width: 120px;
     height: 40px;
     display: flex;
     align-items: center;
-    overflow: hidden;
 }
 
 .company-logo {
+    height: 100%;
     width: auto;
-    height: 40px;
     max-width: 200px;
     object-fit: contain;
-    object-position: right;
     transition: transform 0.3s ease;
 }
 
@@ -111,60 +209,64 @@ body {
     transform: scale(1.05);
 }
 
+/* Progress Bar */
+.progress {
+    height: 8px;
+    background: var(--navy-light);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    margin: 1rem 0;
+}
+
+.progress-bar {
+    background: var(--abra-coral);
+    transition: width 0.3s ease;
+}
+
 /* Quick Add Bar */
 .quick-add-bar {
-    position: sticky;
-    top: 0;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(8px);
     padding: 1rem;
-    z-index: 100;
-    box-shadow: var(--shadow-md);
-    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--navy-light);
+    position: sticky;
+    top: 72px;
+    z-index: 90;
 }
 
 .quick-add-button {
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.5rem;
-    border: none;
-    background: var(--card);
-    color: var(--primary);
-    font-weight: 500;
-    box-shadow: var(--shadow-sm);
-    transition: all 0.2s;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-md);
+    background: white;
+    color: var(--abra-navy);
+    border: 1px solid var(--navy-light);
+    border-color: var(--abra-yellow);
+    font-weight: 500;
+    transition: all 0.2s ease;
 }
 
 .quick-add-button:hover {
-    transform: translateY(-1px);
+    transform: translateY(-2px);
     box-shadow: var(--shadow-md);
+    border-color: var(--abra-pink);
+    color: var(--abra-pink);
 }
 
-/* Section Styles */
-.info-section, .signature-section {
-    background: white;
-    border-radius: 0.75rem;
-    box-shadow: var(--shadow-md);
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    border: 1px solid var(--border-light);
-}
-
-.signature-section {
-    padding: 2rem;
-    margin: 2rem 0;
-}
-
-/* Expense Card Styles */
+/* Expense Card */
 .expense-card {
-    background: var(--card);
-    border-radius: 0.75rem;
-    box-shadow: var(--shadow-md);
+    background: white;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--navy-light);
     padding: 1.5rem;
     margin-bottom: 1rem;
-    border: 1px solid var(--border-light);
+    transition: all 0.3s ease;
+}
+
+.expense-card:hover {
+    box-shadow: var(--shadow-md);
 }
 
 .expense-type-indicator {
@@ -172,41 +274,60 @@ body {
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
-    border-radius: 9999px;
-    font-size: 0.875rem;
+    border-radius: var(--radius-full);
     font-weight: 500;
     margin-bottom: 1rem;
 }
 
 .expense-type-fuel {
-    background-color: rgb(219 234 254);
-    color: var(--primary);
+    background-color: var(--coral-light);
+    color: var(--abra-coral);
 }
 
 .expense-type-parking {
-    background-color: rgb(220 252 231);
-    color: var(--success);
+    background-color: var(--pink-light);
+    color: var(--abra-pink);
 }
 
 .expense-type-other {
-    background-color: rgb(226 232 240);
-    color: var(--secondary);
+    background-color: var(--yellow-light);
+    color: var(--abra-yellow);
 }
 
-/* File Upload Styles */
+/* Form Controls */
+.form-control {
+    border-radius: var(--radius-md);
+    border: 1px solid var(--navy-light);
+    padding: 0.75rem 1rem;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus {
+    border-color: var(--abra-coral);
+    box-shadow: 0 0 0 3px var(--coral-light);
+}
+
+.input-group-text {
+    border-radius: var(--radius-md);
+    background: var(--navy-light);
+    border: none;
+    color: var(--abra-navy);
+}
+
+/* File Upload */
 .file-drop-zone {
-    border: 2px dashed #cbd5e1;
-    border-radius: 0.5rem;
+    border: 2px dashed var(--navy-light);
+    border-radius: var(--radius-md);
     padding: 1.5rem;
     text-align: center;
-    background: var(--background);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
 }
 
+.file-drop-zone:hover,
 .file-drop-zone.drag-over {
-    border-color: var(--primary);
-    background: #eff6ff;
+    border-color: var(--abra-coral);
+    background: var(--coral-light);
 }
 
 .file-preview {
@@ -220,9 +341,9 @@ body {
     position: relative;
     width: 100px;
     height: 100px;
-    border-radius: 0.5rem;
+    border-radius: var(--radius-sm);
     overflow: hidden;
-    border: 1px solid var(--border-light);
+    border: 1px solid var(--navy-light);
 }
 
 .file-preview-item img {
@@ -231,7 +352,7 @@ body {
     object-fit: cover;
 }
 
-.file-preview-item .file-remove {
+.file-remove {
     position: absolute;
     top: 0.25rem;
     right: 0.25rem;
@@ -242,47 +363,39 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
-    color: var(--danger);
     border: none;
+    color: var(--abra-pink);
+    cursor: pointer;
 }
 
-.pdf-preview {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem;
-    background: var(--background);
-    border-radius: 0.5rem;
-    margin-top: 0.5rem;
+/* Signature Section */
+.signature-section {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    margin: 2rem 0;
+    border: 1px solid var(--navy-light);
 }
 
-.pdf-preview i {
-    color: var(--danger);
-    font-size: 1.5rem;
-}
-
-/* Signature Styles */
 .signature-container {
-    background: var(--background);
-    border-radius: 0.5rem;
+    background: var(--abra-white);
+    border-radius: var(--radius-md);
     padding: 1.5rem;
     margin-bottom: 1rem;
 }
 
 .signature-pad {
-    border: 2px dashed #cbd5e1;
-    border-radius: 0.5rem;
+    border: 2px dashed var(--navy-light);
+    border-radius: var(--radius-md);
     background: white;
-    touch-action: none;
     width: 100%;
     height: 150px;
     margin-bottom: 0.5rem;
-    transition: border-color 0.2s;
+    transition: all 0.2s ease;
 }
 
 .signature-pad:hover {
-    border-color: var(--primary);
+    border-color: var(--abra-coral);
 }
 
 .signature-label {
@@ -290,53 +403,8 @@ body {
     align-items: center;
     gap: 0.5rem;
     margin-bottom: 1rem;
-    color: var(--secondary);
     font-weight: 500;
-}
-
-.signature-button {
-    padding: 0.5rem 1rem;
-    border-radius: 0.375rem;
-    border: 1px solid var(--border-light);
-    background: white;
-    color: var(--secondary);
-    font-size: 0.875rem;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.signature-button:hover {
-    background: var(--background);
-    border-color: var(--primary);
-    color: var(--primary);
-}
-
-/* Processing Overlay */
-.processing-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.9);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 1rem;
-    border-radius: 0.5rem;
-    z-index: 10;
-}
-
-.processing-spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid var(--primary);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
+    color: var(--abra-navy);
 }
 
 /* Floating Total */
@@ -345,76 +413,108 @@ body {
     bottom: 1.5rem;
     right: 1.5rem;
     left: 1.5rem;
-    background: var(--primary);
+    background: var(--abra-navy);
     color: white;
-    padding: 1rem;
-    border-radius: 0.75rem;
-    box-shadow: var(--shadow-md);
-    font-weight: 500;
-    z-index: 50;
+    padding: 1.25rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    z-index: 100;
 }
 
 .submit-button {
-    background: white;
-    color: var(--primary);
+    background: var(--abra-coral);
+    color: white;
     border: none;
-    padding: 0.5rem 1.5rem;
-    border-radius: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-md);
     font-weight: 500;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
 }
 
 .submit-button:hover {
+    background: rgb(230, 107, 65);
     transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
+}
+
+/* Loading States */
+.processing-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 1rem;
+    border-radius: var(--radius-md);
+    z-index: 10;
+}
+
+.processing-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--navy-light);
+    border-top-color: var(--abra-coral);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Notifications */
+.alert {
+    border-radius: var(--radius-md);
+    border: none;
+    padding: 1rem 1.5rem;
+}
+
+.alert-success {
+    background: var(--coral-light);
+    color: var(--abra-coral);
+}
+
+.alert-danger {
+    background: var(--pink-light);
+    color: var(--abra-pink);
+}
+
+.alert-warning {
+    background: var(--yellow-light);
+    color: var(--abra-yellow);
 }
 
 /* Animations */
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    to { transform: rotate(360deg); }
 }
 
-@keyframes fadeInDown {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
-.header-animate {
-    animation: fadeInDown 0.5s ease-out;
+.animate__fadeIn {
+    animation: fadeIn 0.3s ease-in-out;
 }
 
-/* Media Queries */
+/* Responsive Design */
 @media (max-width: 768px) {
     .header {
-        padding: 0.75rem;
+        padding: 1rem;
     }
     
     .header.scrolled {
-        padding: 0.5rem;
-    }
-    
-    .company-logo {
-        height: 32px;
-        max-width: 160px;
-    }
-    
-    .logo-container {
-        min-width: 100px;
-        height: 32px;
+        padding: 0.75rem;
     }
     
     .header-title {
-        font-size: 1.25rem;
+        font-size: 1.5rem;
+    }
+    
+    .company-logo {
+        max-width: 160px;
     }
     
     .quick-add-bar {
@@ -423,7 +523,6 @@ body {
     
     .expense-card {
         padding: 1rem;
-        margin-bottom: 0.75rem;
     }
     
     .signature-section {
@@ -434,12 +533,38 @@ body {
         bottom: 1rem;
         right: 1rem;
         left: 1rem;
+        padding: 1rem;
+    }
+    
+    .file-preview-item {
+        width: 80px;
+        height: 80px;
     }
 }
-        
+
+/* Print Styles */
+@media print {
+    .floating-total,
+    .quick-add-bar,
+    .file-drop-zone,
+    .signature-actions {
+        display: none;
+    }
+    
+    body {
+        padding: 0;
+        background: white;
+    }
+    
+    .expense-card,
+    .signature-section {
+        break-inside: avoid;
+        border: 1px solid #ccc;
+    }
+}
     </style>
 </head>
-<body>
+<body class="body-he">
     <header class="header header-animate">
         <div class="container">
             <div class="header-content">
