@@ -18,7 +18,12 @@
     --abra-pink: rgb(255, 82, 136);    /* #ff5288 */
     --abra-yellow: rgb(255, 159, 0);   /* #ff9f00 */
     --abra-white: rgb(252, 249, 245);  /* #fcf9f5 */
-    
+        /* Light Theme (Default) */
+    --bg-primary: var(--abra-white);
+    --bg-secondary: white;
+    --text-primary: var(--abra-navy);
+    --text-secondary: rgba(18, 31, 63, 0.7);
+    --border-color: var(--navy-light);
     /* Secondary Colors */
     --coral-light: rgba(255, 119, 72, 0.1);
     --pink-light: rgba(255, 82, 136, 0.1);
@@ -42,6 +47,14 @@
     --font-heading: 'Sharp Sans No1', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --font-body: 'Simpler Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
+/* Dark Theme */
+[data-theme="dark"] {
+    --bg-primary: #1a1f2b;
+    --bg-secondary: #242935;
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.7);
+    --border-color: rgba(255, 255, 255, 0.1);
+}
 @font-face {
     font-family: 'Sharp Sans No1';
     src: url('./fonts/SharpSansNo1-Bold.otf') format('opentype');
@@ -62,7 +75,105 @@
     font-weight: 400;
     font-style: normal;
 }
+.theme-switcher {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 1010;
+}
 
+.theme-toggle {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.theme-toggle .light-icon,
+.theme-toggle .dark-icon {
+    position: absolute;
+    transition: all 0.3s ease;
+}
+
+.theme-toggle .light-icon {
+    opacity: 1;
+    transform: rotate(0deg);
+}
+
+.theme-toggle .dark-icon {
+    opacity: 0;
+    transform: rotate(90deg);
+}
+
+[data-theme="dark"] .theme-toggle .light-icon {
+    opacity: 0;
+    transform: rotate(-90deg);
+}
+
+[data-theme="dark"] .theme-toggle .dark-icon {
+    opacity: 1;
+    transform: rotate(0deg);
+}
+
+/* Dark Theme Overrides */
+[data-theme="dark"] body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .expense-card,
+[data-theme="dark"] .signature-section,
+[data-theme="dark"] .signature-container {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .form-control {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .form-control:focus {
+    background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .quick-add-button {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .file-drop-zone {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .file-drop-zone:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .input-group-text {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .signature-pad {
+    background: var(--bg-secondary);
+}
 /* Base Styles */
 body {
     background-color: var(--abra-white);
@@ -228,22 +339,28 @@ h1, h2, h3, h4, h5, h6 {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(8px);
     padding: 1rem;
-    border-bottom: 1px solid var(--navy-light);
+    border-bottom: 1px solid var(--border-color);
     position: sticky;
     top: 72px;
     z-index: 90;
+    transition: all 0.3s ease;
 }
 
+[data-theme="dark"] .quick-add-bar {
+    background: rgba(26, 31, 43, 0.95);
+    border-bottom-color: var(--border-color);
+}
+
+/* Quick Add Buttons */
 .quick-add-button {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
     padding: 0.75rem 1.5rem;
     border-radius: var(--radius-md);
-    background: white;
-    color: var(--abra-navy);
-    border: 1px solid var(--navy-light);
-    border-color: var(--abra-yellow);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
     font-weight: 500;
     transition: all 0.2s ease;
 }
@@ -251,10 +368,28 @@ h1, h2, h3, h4, h5, h6 {
 .quick-add-button:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
+    background: var(--bg-primary);
+}
+/* Theme-specific button colors */
+[data-theme="light"] .quick-add-button {
+    border-color: var(--abra-coral);
+    color: var(--abra-coral);
+}
+
+[data-theme="light"] .quick-add-button:hover {
     border-color: var(--abra-pink);
     color: var(--abra-pink);
 }
 
+[data-theme="dark"] .quick-add-button {
+    border-color: var(--abra-yellow);
+    color: var(--abra-yellow);
+}
+
+[data-theme="dark"] .quick-add-button:hover {
+    border-color: var(--abra-coral);
+    color: var(--abra-coral);
+}
 /* Expense Card */
 .expense-card {
     background: white;
@@ -398,15 +533,55 @@ h1, h2, h3, h4, h5, h6 {
     border-color: var(--abra-coral);
 }
 
+/* Signature Label */
 .signature-label {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     margin-bottom: 1rem;
     font-weight: 500;
-    color: var(--abra-navy);
+    color: var(--text-primary);
+    transition: color 0.3s ease;
 }
 
+[data-theme="dark"] .signature-label {
+    color: var(--text-primary);
+}
+
+.signature-label i {
+    color: var(--abra-coral);
+}
+/* Text Muted Styles */
+.text-muted {
+    color: rgba(18, 31, 63, 0.6) !important;
+    transition: color 0.3s ease;
+}
+
+[data-theme="dark"] .text-muted {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* For links with text-muted */
+a.text-muted {
+    text-decoration: none;
+}
+
+a.text-muted:hover {
+    color: rgba(18, 31, 63, 0.8) !important;
+}
+
+[data-theme="dark"] a.text-muted:hover {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* For specific cases where we need higher contrast */
+.form-text.text-muted {
+    color: rgba(18, 31, 63, 0.7) !important;
+}
+
+[data-theme="dark"] .form-text.text-muted {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
 /* Floating Total */
 .floating-total {
     position: fixed;
@@ -437,13 +612,78 @@ h1, h2, h3, h4, h5, h6 {
 .submit-button:hover {
     background: rgb(230, 107, 65);
     transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+/* Delete Button */
+.btn-outline-danger {
+    border-color: var(--abra-pink);
+    color: var(--abra-pink);
+    background: transparent;
+    transition: all 0.2s ease;
 }
 
+.btn-outline-danger:hover {
+    background: var(--pink-light);
+    border-color: var(--abra-pink);
+    color: var(--abra-pink);
+    transform: translateY(-1px);
+}
+
+[data-theme="dark"] .btn-outline-danger {
+    border-color: var(--abra-pink);
+    color: var(--abra-pink);
+}
+
+[data-theme="dark"] .btn-outline-danger:hover {
+    background: rgba(255, 82, 136, 0.1);
+}
+
+/* Focus States */
+button:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--coral-light);
+}
+
+/* Disabled States */
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+.signature-button {
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.signature-button:hover {
+    background: var(--bg-primary);
+    border-color: var(--abra-coral);
+    color: var(--abra-coral);
+}
+
+[data-theme="dark"] .signature-button {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .signature-button:hover {
+    background: rgba(255, 119, 72, 0.1);
+    border-color: var(--abra-coral);
+}
 /* Loading States */
 .processing-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(255, 255, 255, 0.9);
+    background: var(--bg-secondary);
+    opacity: 0.95;
     backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
@@ -452,15 +692,33 @@ h1, h2, h3, h4, h5, h6 {
     gap: 1rem;
     border-radius: var(--radius-md);
     z-index: 10;
+    transition: all 0.3s ease;
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .processing-overlay {
+    background: rgba(26, 31, 43, 0.95);
 }
 
 .processing-spinner {
     width: 40px;
     height: 40px;
-    border: 4px solid var(--navy-light);
-    border-top-color: var(--abra-coral);
+    border: 4px solid transparent;
     border-radius: 50%;
     animation: spin 1s linear infinite;
+    position: relative;
+}
+
+/* Light theme spinner */
+[data-theme="light"] .processing-spinner {
+    border-color: var(--navy-light);
+    border-top-color: var(--abra-coral);
+}
+
+/* Dark theme spinner */
+[data-theme="dark"] .processing-spinner {
+    border-color: rgba(255, 255, 255, 0.1);
+    border-top-color: var(--abra-coral);
 }
 
 /* Notifications */
@@ -484,7 +742,30 @@ h1, h2, h3, h4, h5, h6 {
     background: var(--yellow-light);
     color: var(--abra-yellow);
 }
+/* Loading text styles */
+.processing-overlay div:not(.processing-spinner) {
+    font-weight: 500;
+    color: var(--text-primary);
+}
 
+/* Optional: Add a pulsing effect to the text */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.processing-overlay div:not(.processing-spinner) {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Optional: Add a subtle shadow to the overlay */
+.processing-overlay {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .processing-overlay {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
 /* Animations */
 @keyframes spin {
     to { transform: rotate(360deg); }
@@ -568,12 +849,20 @@ h1, h2, h3, h4, h5, h6 {
     <header class="header header-animate">
         <div class="container">
             <div class="header-content">
-                <h1 class="header-title">דוח החזר הוצאות</h1>
-                <div class="logo-container">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Google_2015_logo.svg/1200px-Google_2015_logo.svg.png" 
-                         alt="Company Logo" 
-                         class="company-logo"
-                         loading="eager">
+                <h1 class="header-title heading-he text-h1">דוח החזר הוצאות</h1>
+                <div class="d-flex align-items-center gap-3">
+                    <!-- Theme Toggle Button -->
+                    <button class="theme-toggle" aria-label="Toggle dark mode" title="שינוי מצב תצוגה">
+                        <i class="fas fa-sun light-icon"></i>
+                        <i class="fas fa-moon dark-icon"></i>
+                    </button>
+                    <!-- Company Logo -->
+                    <div class="logo-container">
+                        <img src="abra logo FullColor white PNG.png" 
+                             alt="Company Logo" 
+                             class="company-logo"
+                             loading="eager">
+                    </div>
                 </div>
             </div>
         </div>
@@ -1409,6 +1698,32 @@ if (header) {
             
             initTooltips();
         });
+        // Theme Switcher Logic
+function initThemeSwitcher() {
+    const themeToggle = document.querySelector('.theme-toggle');
+    
+    function setTheme(isDark) {
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    }
+    
+    themeToggle.addEventListener('click', () => {
+        const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+        setTheme(!isDarkMode);
+    });
+    
+    // Set initial theme based on user's system preferences
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        setTheme(true);
+    }
+    
+    // Listen for system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+        setTheme(e.matches);
+    });
+}
+
+// Initialize theme switcher when DOM is loaded
+document.addEventListener('DOMContentLoaded', initThemeSwitcher);
     </script>
 </body>
 </html>
