@@ -518,7 +518,12 @@ h1, h2, h3, h4, h5, h6 {
     padding: 1.5rem;
     margin-bottom: 1rem;
 }
-
+[data-theme="dark"]  .signature-container{
+    background: rgba(26, 31, 43, 0.95);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
 .signature-pad {
     border: 2px dashed var(--navy-light);
     border-radius: var(--radius-md);
@@ -532,7 +537,9 @@ h1, h2, h3, h4, h5, h6 {
 .signature-pad:hover {
     border-color: var(--abra-coral);
 }
-
+[data-theme="dark"]  .signature-pad{
+    border-color: var(--abra-coral);
+}
 /* Signature Label */
 .signature-label {
     display: flex;
