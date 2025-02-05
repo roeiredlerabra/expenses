@@ -4,16 +4,15 @@ if (typeof pdfjsLib !== 'undefined') {
 
 let currentPdfDoc = null;
 let currentPage = 1;
+let initialScale = 1.0; 
 let currentScale = 1.0;
 
 async function renderPDF(pdfUrl, container) {
     try {
-        // Check if PDF.js is loaded
         if (typeof pdfjsLib === 'undefined') {
             throw new Error('PDF.js is not loaded');
         }
 
-        // Create PDF viewer container
         container.innerHTML = `
             <div class="pdf-viewer-container">
                 <div class="pdf-viewer-toolbar">
@@ -45,14 +44,26 @@ async function renderPDF(pdfUrl, container) {
             </div>
         `;
 
-        // Load the PDF
         const loadingTask = pdfjsLib.getDocument(pdfUrl);
         currentPdfDoc = await loadingTask.promise;
         
-        // Update total pages
         document.getElementById('totalPages').textContent = currentPdfDoc.numPages;
         
-        // Initial render
+        const page = await currentPdfDoc.getPage(1);
+        const viewport = page.getViewport({ scale: 1.0 });
+        
+        // Calculate available height and width
+        const containerHeight = container.clientHeight - 60;
+        const containerWidth = container.clientWidth - 40;
+        
+        // Calculate scales for both width and height fitting
+        const scaleByHeight = containerHeight / viewport.height;
+        const scaleByWidth = containerWidth / viewport.width;
+        
+        // Set initial scale and current scale
+        initialScale = Math.min(scaleByHeight, scaleByWidth);
+        currentScale = initialScale;
+        
         await renderPage(1);
         
         // Add event listeners
@@ -61,7 +72,6 @@ async function renderPDF(pdfUrl, container) {
         document.getElementById('zoomIn').addEventListener('click', zoomIn);
         document.getElementById('zoomOut').addEventListener('click', zoomOut);
         
-        // Enable touch swipe for mobile
         enableTouchNavigation(container.querySelector('.pdf-canvas-container'));
         
     } catch (error) {
@@ -82,32 +92,25 @@ async function renderPage(pageNumber) {
         const canvas = document.getElementById('pdfCanvas');
         const context = canvas.getContext('2d');
         
-        // Handle device pixel ratio for sharp rendering on mobile
         const pixelRatio = window.devicePixelRatio || 1;
-        const viewport = page.getViewport({ scale: currentScale * pixelRatio });
+        const viewport = page.getViewport({ scale: currentScale });
         
-        // Set canvas dimensions
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
+        canvas.width = viewport.width * pixelRatio;
+        canvas.height = viewport.height * pixelRatio;
         
-        // Scale canvas display size
-        canvas.style.width = (viewport.width / pixelRatio) + 'px';
-        canvas.style.height = (viewport.height / pixelRatio) + 'px';
+        canvas.style.width = viewport.width + 'px';
+        canvas.style.height = viewport.height + 'px';
         
-        // Scale context to handle device pixel ratio
         context.scale(pixelRatio, pixelRatio);
         
-        // Render the page
         await page.render({
             canvasContext: context,
             viewport: viewport
         }).promise;
         
-        // Update current page display
         currentPage = pageNumber;
         document.getElementById('currentPage').textContent = pageNumber;
         
-        // Update buttons state
         document.getElementById('prevPage').disabled = pageNumber <= 1;
         document.getElementById('nextPage').disabled = pageNumber >= currentPdfDoc.numPages;
         
@@ -115,6 +118,64 @@ async function renderPage(pageNumber) {
         console.error('Error rendering page:', error);
     }
 }
+
+// Update the CSS
+const style = document.createElement('style');
+style.textContent = `
+.pdf-viewer-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-secondary);
+}
+
+.pdf-viewer-toolbar {
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+
+.pdf-canvas-container {
+    flex: 1;
+    overflow: auto;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Changed from center to allow proper scrolling */
+    background: var(--bg-secondary);
+}
+
+#pdfCanvas {
+    box-shadow: var(--shadow-md);
+    display: block; /* Ensures proper rendering */
+}
+
+.preview-container.pdf-mode {
+    padding: 0;
+    background: var(--bg-secondary);
+}
+
+.pdf-viewer-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pdf-viewer-button:not(:disabled):hover {
+    background: var(--navy-light);
+}
+
+.preview-container.pdf-mode .pdf-viewer-container {
+    height: calc(50vh - 4rem);
+}
+
+@media (max-width: 768px) {
+    .preview-container.pdf-mode .pdf-viewer-container {
+        height: calc(70vh - 4rem);
+    }
+}
+`;
+document.head.appendChild(style);
 
 function previousPage() {
     if (currentPage <= 1) return;
@@ -127,15 +188,30 @@ function nextPage() {
 }
 
 function zoomIn() {
-    currentScale = Math.min(currentScale * 1.25, 3.0);
+    const maxScale = initialScale * 3; // Maximum 3x the initial fitting scale
+    currentScale = Math.min(currentScale * 1.25, maxScale);
     renderPage(currentPage);
+    updateZoomButtons();
 }
 
 function zoomOut() {
-    currentScale = Math.max(currentScale * 0.8, 0.5);
+    const minScale = initialScale * 0.5; // Minimum 0.5x the initial fitting scale
+    currentScale = Math.max(currentScale * 0.8, minScale);
     renderPage(currentPage);
+    updateZoomButtons();
 }
 
+function updateZoomButtons() {
+    const zoomInButton = document.getElementById('zoomIn');
+    const zoomOutButton = document.getElementById('zoomOut');
+    
+    if (zoomInButton) {
+        zoomInButton.disabled = currentScale >= initialScale * 3;
+    }
+    if (zoomOutButton) {
+        zoomOutButton.disabled = currentScale <= initialScale * 0.5;
+    }
+}
 function enableTouchNavigation(element) {
     let touchStartX = 0;
     let touchStartY = 0;
