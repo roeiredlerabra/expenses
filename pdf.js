@@ -1,18 +1,25 @@
-// Initialize PDF.js
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+if (typeof pdfjsLib !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
 
 let currentPdfDoc = null;
 let currentPage = 1;
+let currentScale = 1.0;
 
 async function renderPDF(pdfUrl, container) {
     try {
+        // Check if PDF.js is loaded
+        if (typeof pdfjsLib === 'undefined') {
+            throw new Error('PDF.js is not loaded');
+        }
+
         // Create PDF viewer container
         container.innerHTML = `
             <div class="pdf-viewer-container">
                 <div class="pdf-viewer-toolbar">
                     <div class="pdf-viewer-controls">
                         <button class="pdf-viewer-button" id="prevPage">
-                            <i class="fas fa-chevron-left"></i>
+                            <i class="fas fa-chevron-right"></i>
                             הקודם
                         </button>
                         <span class="pdf-page-display">
@@ -20,7 +27,7 @@ async function renderPDF(pdfUrl, container) {
                         </span>
                         <button class="pdf-viewer-button" id="nextPage">
                             הבא
-                            <i class="fas fa-chevron-right"></i>
+                            <i class="fas fa-chevron-left"></i>
                         </button>
                     </div>
                     <div class="pdf-viewer-controls">
@@ -67,8 +74,6 @@ async function renderPDF(pdfUrl, container) {
     }
 }
 
-let currentScale = 1.0;
-
 async function renderPage(pageNumber) {
     if (!currentPdfDoc) return;
     
@@ -77,11 +82,20 @@ async function renderPage(pageNumber) {
         const canvas = document.getElementById('pdfCanvas');
         const context = canvas.getContext('2d');
         
-        const viewport = page.getViewport({ scale: currentScale });
+        // Handle device pixel ratio for sharp rendering on mobile
+        const pixelRatio = window.devicePixelRatio || 1;
+        const viewport = page.getViewport({ scale: currentScale * pixelRatio });
         
         // Set canvas dimensions
         canvas.width = viewport.width;
         canvas.height = viewport.height;
+        
+        // Scale canvas display size
+        canvas.style.width = (viewport.width / pixelRatio) + 'px';
+        canvas.style.height = (viewport.height / pixelRatio) + 'px';
+        
+        // Scale context to handle device pixel ratio
+        context.scale(pixelRatio, pixelRatio);
         
         // Render the page
         await page.render({
@@ -102,14 +116,14 @@ async function renderPage(pageNumber) {
     }
 }
 
-async function previousPage() {
+function previousPage() {
     if (currentPage <= 1) return;
-    await renderPage(currentPage - 1);
+    renderPage(currentPage - 1);
 }
 
-async function nextPage() {
+function nextPage() {
     if (!currentPdfDoc || currentPage >= currentPdfDoc.numPages) return;
-    await renderPage(currentPage + 1);
+    renderPage(currentPage + 1);
 }
 
 function zoomIn() {
@@ -124,27 +138,26 @@ function zoomOut() {
 
 function enableTouchNavigation(element) {
     let touchStartX = 0;
-    let touchEndX = 0;
+    let touchStartY = 0;
     
     element.addEventListener('touchstart', (e) => {
         touchStartX = e.touches[0].clientX;
-    }, false);
+        touchStartY = e.touches[0].clientY;
+    }, { passive: true });
     
     element.addEventListener('touchend', (e) => {
-        touchEndX = e.changedTouches[0].clientX;
-        handleSwipe();
-    }, false);
-    
-    function handleSwipe() {
-        const swipeDistance = touchEndX - touchStartX;
-        const minSwipeDistance = 50;
+        const touchEndX = e.changedTouches[0].clientX;
+        const touchEndY = e.changedTouches[0].clientY;
+        const deltaX = touchEndX - touchStartX;
+        const deltaY = touchEndY - touchStartY;
         
-        if (Math.abs(swipeDistance) > minSwipeDistance) {
-            if (swipeDistance > 0) {
+        // Only handle horizontal swipes
+        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+            if (deltaX > 0) {
                 previousPage();
             } else {
                 nextPage();
             }
         }
-    }
+    }, { passive: true });
 }

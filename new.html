@@ -2145,23 +2145,32 @@ function openPreview(element) {
     // Clear previous content
     container.innerHTML = '';
     
-    if (element.tagName === 'IMG') {
-        // Handle image preview
-        container.classList.remove('pdf-mode');
-        const img = document.createElement('img');
-        img.src = element.src;
-        container.appendChild(img);
-    } else if (element.classList.contains('pdf-preview')) {
-        // Handle PDF preview
-        container.classList.add('pdf-mode');
-        renderPDF(element.dataset.pdfUrl, container);
+    try {
+        if (element.tagName === 'IMG') {
+            // Handle image preview
+            container.classList.remove('pdf-mode');
+            const img = document.createElement('img');
+            img.src = element.src;
+            container.appendChild(img);
+        } else if (element.classList.contains('pdf-preview')) {
+            // Handle PDF preview
+            container.classList.add('pdf-mode');
+            if (typeof renderPDF === 'function') {
+                renderPDF(element.dataset.pdfUrl, container);
+            } else {
+                throw new Error('PDF viewer not initialized');
+            }
+        }
+        
+        // Show overlay with animation
+        overlay.classList.add('active');
+        
+        // Add keyboard listener for escape key
+        document.addEventListener('keydown', handleEscKey);
+    } catch (error) {
+        console.error('Preview error:', error);
+        showNotification('שגיאה בטעינת התצוגה המקדימה', 'danger');
     }
-    
-    // Show overlay with animation
-    overlay.classList.add('active');
-    
-    // Add keyboard listener for escape key
-    document.addEventListener('keydown', handleEscKey);
 }
 
 // Function to close preview
