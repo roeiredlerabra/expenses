@@ -9,6 +9,9 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/4.1.5/signature_pad.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="/pdf.js"></script>
     <style>
 /* CSS Variables */
 :root {
@@ -95,7 +98,32 @@
     justify-content: center;
     transition: all 0.3s ease;
 }
+/* Placeholder styles for light mode */
+.form-control::placeholder {
+    color: rgba(18, 31, 63, 0.5); /* Navy color with opacity */
+}
 
+/* Placeholder styles for dark mode */
+[data-theme="dark"] .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.5); /* White with opacity */
+}
+
+/* Placeholder styles for all browser vendors in dark mode */
+[data-theme="dark"] .form-control::-webkit-input-placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="dark"] .form-control::-moz-placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="dark"] .form-control:-ms-input-placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme="dark"] .form-control:-moz-placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
 .theme-toggle:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
@@ -915,6 +943,196 @@ button:disabled {
         border: 1px solid #ccc;
     }
 }
+
+/* File Preview Overlay */
+.file-preview-overlay {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+    z-index: 9999;
+    display: none;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    max-height: 50vh;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .file-preview-overlay {
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.file-preview-overlay.active {
+    display: block;
+    transform: translateY(0);
+}
+
+.preview-content {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    padding: 1rem;
+
+}
+
+.preview-container {
+    width: 100%;
+    height: calc(50vh - 4rem); /* Account for padding and close button */
+    overflow: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.preview-container img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.preview-container iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: white;
+}
+
+.close-preview {
+    position: absolute;
+    top: -0.5rem;
+    right: 0.5rem;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    z-index: 10;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex
+;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    background-color: green;
+}
+
+.close-preview:hover {
+    background: var(--navy-light);
+}
+
+/* Make preview items clickable */
+.file-preview-item {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.file-preview-item:hover {
+    transform: scale(1.05);
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .preview-container iframe {
+    background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .close-preview:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .file-preview-overlay {
+        max-height: 70vh;
+    }
+    
+    .preview-container {
+        height: calc(70vh - 4rem);
+    }
+}
+
+/* Adjust floating total when preview is open */
+.file-preview-overlay.active + .floating-total {
+    bottom: calc(50vh + 1rem);
+}
+
+@media (max-width: 768px) {
+    .file-preview-overlay.active + .floating-total {
+        bottom: calc(70vh + 1rem);
+    }
+}
+/* PDF Viewer Styles */
+.pdf-viewer-container {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background: white;
+    display: flex;
+    flex-direction: column;
+}
+
+[data-theme="dark"] .pdf-viewer-container {
+    background: var(--bg-secondary);
+}
+
+.pdf-viewer-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.pdf-viewer-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.pdf-viewer-button {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.pdf-viewer-button:hover {
+    background: var(--navy-light);
+}
+
+.pdf-page-display {
+    margin: 0 0.5rem;
+    color: var(--text-primary);
+}
+
+.pdf-canvas-container {
+    flex: 1;
+    overflow: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#pdfCanvas {
+    max-width: 100%;
+    margin: 0 auto;
+}
+.preview-container.pdf-mode {
+    flex-direction: column;
+    padding: 0;
+}
     </style>
 </head>
 <body class="body-he">
@@ -1399,81 +1617,117 @@ Object.values(signaturePads).forEach(pad => {
         }
 
         async function handleFiles(files, dropZone) {
-            const validFiles = Array.from(files).filter(file => {
-                const type = file.type.toLowerCase();
-                return type.startsWith('image/') || type === 'application/pdf';
-            });
+    const validFiles = Array.from(files).filter(file => {
+        const type = file.type.toLowerCase();
+        return type.startsWith('image/') || type === 'application/pdf';
+    });
 
-            if (validFiles.length !== files.length) {
-                showNotification('רק קבצי תמונה ו-PDF מותרים להעלאה', 'warning');
-            }
+    if (validFiles.length !== files.length) {
+        showNotification('רק קבצי תמונה ו-PDF מותרים להעלאה', 'warning');
+    }
 
-            const previewContainer = dropZone.nextElementSibling;
-            const expenseCard = dropZone.closest('.expense-card');
+    const expenseCard = dropZone.closest('.expense-card');
+    const previewContainer = dropZone.nextElementSibling;
 
-            for (const file of validFiles) {
-                if (file.type.startsWith('image/')) {
-                    try {
-                        // Show processing overlay
-                        const processingOverlay = document.createElement('div');
-                        processingOverlay.className = 'processing-overlay';
-                        processingOverlay.innerHTML = `
-                            <div class="processing-spinner"></div>
-                            <div>מעבד קבלה...</div>
-                        `;
-                        expenseCard.style.position = 'relative';
-                        expenseCard.appendChild(processingOverlay);
+    // Check if important fields already have data
+    const amountInput = expenseCard.querySelector('.expense-amount');
+    const invoiceInput = expenseCard.querySelector('input[placeholder="הזן מספר חשבונית"]');
+    const hasExistingData = (amountInput?.value || invoiceInput?.value);
 
-                        // Create preview
-                        const reader = new FileReader();
-                        reader.onload = async function(e) {
-                            const preview = document.createElement('div');
-                            preview.className = 'file-preview-item';
-                            preview.innerHTML = `
-                                <img src="${e.target.result}" alt="Preview">
-                                <button type="button" class="file-remove" onclick="removeFile(this)">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            `;
-                            previewContainer.appendChild(preview);
-
-                            // Extract base64 data
-                            const base64Data = e.target.result.split(',')[1];
-                            
-                            // Process image with Gemini
-                            try {
-                                const receiptData = await processReceiptImage(base64Data);
-                                populateExpenseFields(expenseCard, receiptData);
-                                showNotification('פרטי הקבלה הועתקו בהצלחה', 'success');
-                            } catch (error) {
-                                console.error('Receipt processing error:', error);
-                                showNotification('שגיאה בעיבוד הקבלה: ' + error.message, 'danger');
-                            } finally {
-                                // Remove processing overlay
-                                processingOverlay.remove();
-                            }
-                        };
-                        reader.readAsDataURL(file);
-                    } catch (error) {
-                        console.error('File handling error:', error);
-                        showNotification('שגיאה בטעינת הקובץ', 'danger');
-                    }
-                } else if (file.type === 'application/pdf') {
-                    // Handle PDFs as before
-                    const pdfPreview = document.createElement('div');
-                    pdfPreview.className = 'pdf-preview';
-                    pdfPreview.innerHTML = `
-                        <i class="fas fa-file-pdf"></i>
-                        <span>${file.name}</span>
-                        <button type="button" class="btn btn-sm btn-link text-danger" onclick="removeFile(this)">
+    for (const file of files) {
+        try {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    // Create and add preview
+                    const preview = document.createElement('div');
+                    preview.className = 'file-preview-item';
+                    preview.innerHTML = `
+                        <img src="${e.target.result}" alt="Preview">
+                        <button type="button" class="file-remove" onclick="event.stopPropagation(); removeFile(this)">
                             <i class="fas fa-times"></i>
                         </button>
                     `;
-                    previewContainer.appendChild(pdfPreview);
-                }
+                    
+                    preview.addEventListener('click', () => {
+                        openPreview(preview.querySelector('img'));
+                    });
+                    
+                    previewContainer.appendChild(preview);
+
+                    // Only process receipt if no existing data
+                    if (!hasExistingData) {
+                        // Add loading overlay
+                        const loadingOverlay = document.createElement('div');
+                        loadingOverlay.className = 'processing-overlay';
+                        loadingOverlay.innerHTML = `
+                            <div class="processing-spinner"></div>
+                            <div>מעבד את הקבלה...</div>
+                        `;
+                        expenseCard.style.position = 'relative';
+                        expenseCard.appendChild(loadingOverlay);
+
+                        try {
+                            loadingOverlay.querySelector('div:not(.processing-spinner)').textContent = 'מזהה פרטי קבלה...';
+                            const base64Image = e.target.result.split(',')[1];
+                            const receiptData = await processReceiptImage(base64Image);
+                            
+                            loadingOverlay.querySelector('div:not(.processing-spinner)').textContent = 'ממלא נתונים...';
+                            await populateExpenseFields(expenseCard, receiptData);
+                            
+                            loadingOverlay.remove();
+                            showNotification('נתוני הקבלה זוהו והוזנו בהצלחה', 'success');
+                        } catch (error) {
+                            console.error('Error processing receipt:', error);
+                            loadingOverlay.remove();
+                            showNotification('לא ניתן היה לזהות את נתוני הקבלה באופן אוטומטי', 'warning');
+                        }
+                    }
+                };
+                reader.readAsDataURL(file);
+                
+            } else if (file.type === 'application/pdf') {
+                const pdfPreview = document.createElement('div');
+                pdfPreview.className = 'file-preview-item pdf-preview';
+                pdfPreview.dataset.pdfUrl = URL.createObjectURL(file);
+                pdfPreview.innerHTML = `
+                    <i class="fas fa-file-pdf"></i>
+                    <span>${file.name}</span>
+                    <button type="button" class="file-remove" onclick="event.stopPropagation(); removeFile(this)">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                
+                pdfPreview.addEventListener('click', () => {
+                    openPreview(pdfPreview);
+                });
+                
+                previewContainer.appendChild(pdfPreview);
             }
+        } catch (error) {
+            console.error('Error handling file:', error);
+            showNotification('שגיאה בטעינת הקובץ', 'danger');
         }
-        function removeFile(button) {
+    }
+}
+// Helper function to show loading state for specific elements
+function toggleElementLoading(element, isLoading, loadingText = 'טוען...') {
+    const existingOverlay = element.querySelector('.processing-overlay');
+    if (isLoading && !existingOverlay) {
+        const overlay = document.createElement('div');
+        overlay.className = 'processing-overlay';
+        overlay.innerHTML = `
+            <div class="processing-spinner"></div>
+            <div>${loadingText}</div>
+        `;
+        element.style.position = 'relative';
+        element.appendChild(overlay);
+    } else if (!isLoading && existingOverlay) {
+        existingOverlay.remove();
+    }
+}
+
+function removeFile(button) {
             button.closest('.file-preview-item, .pdf-preview').remove();
         }
         // Animate number changes
@@ -1884,9 +2138,76 @@ function initThemeSwitcher() {
         setTheme(e.matches);
     });
 }
+function openPreview(element) {
+    const overlay = document.getElementById('filePreviewOverlay');
+    const container = overlay.querySelector('.preview-container');
+    
+    // Clear previous content
+    container.innerHTML = '';
+    
+    if (element.tagName === 'IMG') {
+        // Handle image preview
+        container.classList.remove('pdf-mode');
+        const img = document.createElement('img');
+        img.src = element.src;
+        container.appendChild(img);
+    } else if (element.classList.contains('pdf-preview')) {
+        // Handle PDF preview
+        container.classList.add('pdf-mode');
+        renderPDF(element.dataset.pdfUrl, container);
+    }
+    
+    // Show overlay with animation
+    overlay.classList.add('active');
+    
+    // Add keyboard listener for escape key
+    document.addEventListener('keydown', handleEscKey);
+}
+
+// Function to close preview
+function closePreview() {
+    const overlay = document.getElementById('filePreviewOverlay');
+    overlay.classList.remove('active');
+    
+    // Cleanup PDF viewer if active
+    currentPdfDoc = null;
+    currentScale = 1.0;
+    
+    // Remove event listeners
+    document.removeEventListener('keydown', handleEscKey);
+}
+
+// Handle escape key press
+function handleEscKey(e) {
+    if (e.key === 'Escape') {
+        closePreview();
+    }
+}
+
+// Handle click outside preview content
+function handleOutsideClick(e) {
+    if (e.target === document.getElementById('filePreviewOverlay')) {
+        closePreview();
+    }
+}
+
+
+
+
+
 
 // Initialize theme switcher when DOM is loaded
 document.addEventListener('DOMContentLoaded', initThemeSwitcher);
     </script>
+    <div id="filePreviewOverlay" class="file-preview-overlay">
+        <div class="preview-content">
+            <button type="button" class="close-preview" onclick="closePreview()">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="preview-container">
+                <!-- Content will be dynamically inserted here -->
+            </div>
+        </div>
+    </div>
 </body>
 </html>
