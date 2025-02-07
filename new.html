@@ -1389,13 +1389,39 @@ function populateExpenseReport(data) {
     container.innerHTML = ''; // Clear existing expenses
     
     data.expense_items.forEach(item => {
-        quickAdd(item.ExpenseType);
+        // Determine expense type from the original data
+        let expenseType = 'other'; // default
+        if (item.ExpenseType.toLowerCase().includes('דלק')) {
+            expenseType = 'fuel';
+        } else if (item.ExpenseType.toLowerCase().includes('חניה')) {
+            expenseType = 'parking';
+        }
+
+        quickAdd(expenseType);
         const card = container.firstElementChild;
         
+        // Handle UTC date conversion for expense date
+        let expenseDate = '';
+        if (item.ExpenseDate) {
+            // Parse the UTC date and adjust to local date
+            const date = new Date(item.ExpenseDate);
+            // Format as YYYY-MM-DD for input[type="date"]
+            expenseDate = date.toLocaleDateString('en-CA'); // en-CA produces YYYY-MM-DD format
+        }
+        
         // Populate expense fields
-        card.querySelector('input[type="date"]').value = new Date(item.ExpenseDate).toISOString().split('T')[0];
-        card.querySelector('input[placeholder="הזן מספר חשבונית"]').value = item.InvoiceNumber;
-        card.querySelector('.expense-amount').value = item.Amount;
+        const dateInput = card.querySelector('input[type="date"]');
+        const invoiceInput = card.querySelector('input[placeholder="הזן מספר חשבונית"]');
+        const amountInput = card.querySelector('.expense-amount');
+        
+        if (dateInput) dateInput.value = expenseDate;
+        if (invoiceInput) invoiceInput.value = item.InvoiceNumber || '';
+        if (amountInput) amountInput.value = parseFloat(item.Amount) || 0;
+
+        // Make all expense fields readonly in manager review mode
+        dateInput.readOnly = true;
+        invoiceInput.readOnly = true;
+        amountInput.readOnly = true;
     });
 
     // Handle signatures
@@ -1404,20 +1430,131 @@ function populateExpenseReport(data) {
             if (sig.file) {
                 const padIds = ['employeeSignature', 'managerSignature', 'provadorSignature'];
                 const pad = signaturePads[padIds[index]];
-                // Load signature image and draw it on canvas
-                const img = new Image();
-                img.onload = function() {
-                    const canvas = pad.canvas;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0);
+                
+                // Convert binary to base64 and draw on canvas
+                const blob = new Blob([sig.file], { type: 'image/png' });
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = pad.canvas;
+                        const ctx = canvas.getContext('2d');
+                        
+                        // Clear the canvas first
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        
+                        // Calculate scaling to maintain aspect ratio
+                        const scale = Math.min(
+                            canvas.width / img.width,
+                            canvas.height / img.height
+                        );
+                        
+                        // Calculate centered position
+                        const x = (canvas.width - img.width * scale) / 2;
+                        const y = (canvas.height - img.height * scale) / 2;
+                        
+                        // Draw image with proper scaling and centering
+                        ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                    };
+                    img.src = e.target.result;
                 };
-                img.src = sig.file;
+                
+                reader.onerror = function(error) {
+                    console.error('Error reading signature file:', error);
+                    showNotification('שגיאה בטעינת החתימה', 'danger');
+                };
+                
+                reader.readAsDataURL(blob);
+            }
+        });
+    }
+
+    // Handle attached files
+    if (data.data.files) {
+        data.data.files.forEach(fileData => {
+            if (fileData.file) {
+                const container = document.querySelector('.expense-card:last-child .file-preview');
+                if (!container) {
+                    console.error('File preview container not found');
+                    return;
+                }
+
+                const blob = new Blob([fileData.file], { 
+                    type: fileData.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/png'
+                });
+                
+                const previewItem = document.createElement('div');
+                previewItem.className = fileData.name.toLowerCase().endsWith('.pdf') ? 
+                    'file-preview-item pdf-preview' : 'file-preview-item';
+
+                if (fileData.name.toLowerCase().endsWith('.pdf')) {
+                    // Handle PDF files
+                    const objectUrl = URL.createObjectURL(blob);
+                    previewItem.dataset.pdfUrl = objectUrl;
+                    previewItem.innerHTML = `
+                        <i class="fas fa-file-pdf"></i>
+                        <span>${fileData.name}</span>
+                        <button type="button" class="file-remove" onclick="event.stopPropagation(); removeFile(this)">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+
+                    // Cleanup object URL when preview is removed
+                    previewItem.addEventListener('remove', () => {
+                        URL.revokeObjectURL(objectUrl);
+                    });
+                } else {
+                    // Handle images
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        previewItem.innerHTML = `
+                            <img src="${e.target.result}" alt="Preview">
+                            <button type="button" class="file-remove" onclick="event.stopPropagation(); removeFile(this)">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        `;
+                    };
+                    
+                    reader.onerror = function(error) {
+                        console.error('Error reading file:', error);
+                        showNotification('שגיאה בטעינת הקובץ המצורף', 'danger');
+                    };
+                    
+                    reader.readAsDataURL(blob);
+                }
+
+                // Add click handler for preview
+                previewItem.addEventListener('click', () => {
+                    openPreview(previewItem.querySelector('img') || previewItem);
+                });
+
+                container.appendChild(previewItem);
             }
         });
     }
 
     updateTotal();
+
+    // If in manager review mode, disable appropriate controls
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('id')) {
+        // Disable all inputs except manager signature
+        document.querySelectorAll('input, .file-remove').forEach(el => {
+            if (!el.closest('#managerSignature')) {
+                el.disabled = true;
+            }
+        });
+
+        // Disable other signature pads
+        ['employeeSignature', 'provadorSignature'].forEach(id => {
+            if (signaturePads[id]) {
+                signaturePads[id].off();
+            }
+        });
+    }
 }
+
 
 function setupManagerReviewMode() {
     // Disable all inputs except manager signature
@@ -1427,9 +1564,10 @@ function setupManagerReviewMode() {
         }
     });
 
-    // Hide quick add bar and remove expense buttons
+    // Hide quick add bar, remove expense buttons, and file drop zones
     document.querySelector('.quick-add-bar').style.display = 'none';
     document.querySelectorAll('.btn-outline-danger').forEach(btn => btn.style.display = 'none');
+    document.querySelectorAll('.file-drop-zone').forEach(zone => zone.style.display = 'none');
 
     // Modify submit button
     const submitButton = document.querySelector('.submit-button');
