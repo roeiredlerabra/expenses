@@ -1557,14 +1557,17 @@ function populateExpenseReport(data) {
 
 
 function setupManagerReviewMode() {
-    // Disable all inputs except manager signature
+    // Disable all inputs except manager signature and theme toggle
     document.querySelectorAll('input, button').forEach(el => {
-        if (!el.closest('.signature-container')) {
+        if (!el.closest('.signature-container') && !el.classList.contains('theme-toggle')) {
             el.disabled = true;
         }
     });
 
-    // Hide quick add bar, remove expense buttons, and file drop zones
+    // Re-enable theme toggle if it was disabled
+    document.querySelector('.theme-toggle').disabled = false;
+
+    // Rest of the function remains the same...
     document.querySelector('.quick-add-bar').style.display = 'none';
     document.querySelectorAll('.btn-outline-danger').forEach(btn => btn.style.display = 'none');
     document.querySelectorAll('.file-drop-zone').forEach(zone => zone.style.display = 'none');
