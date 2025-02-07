@@ -1431,6 +1431,12 @@ function populateExpenseReport(data) {
                 const padIds = ['employeeSignature', 'managerSignature', 'provadorSignature'];
                 const pad = signaturePads[padIds[index]];
                 
+                // Store the original file name/id in a data attribute on the canvas
+                const canvas = pad.canvas;
+                // Decode the URL-encoded filename
+                const decodedId = decodeURIComponent(sig.id.replace(/\+/g, ' '));
+                canvas.dataset.originalFile = decodedId;
+                
                 // Convert binary to base64 and draw on canvas
                 const blob = new Blob([sig.file], { type: 'image/png' });
                 const reader = new FileReader();
@@ -1438,7 +1444,6 @@ function populateExpenseReport(data) {
                 reader.onload = function(e) {
                     const img = new Image();
                     img.onload = function() {
-                        const canvas = pad.canvas;
                         const ctx = canvas.getContext('2d');
                         
                         // Clear the canvas first
@@ -1458,11 +1463,6 @@ function populateExpenseReport(data) {
                         ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
                     };
                     img.src = e.target.result;
-                };
-                
-                reader.onerror = function(error) {
-                    console.error('Error reading signature file:', error);
-                    showNotification('שגיאה בטעינת החתימה', 'danger');
                 };
                 
                 reader.readAsDataURL(blob);
@@ -1487,40 +1487,34 @@ function populateExpenseReport(data) {
                 const previewItem = document.createElement('div');
                 previewItem.className = fileData.name.toLowerCase().endsWith('.pdf') ? 
                     'file-preview-item pdf-preview' : 'file-preview-item';
+                
+                // Store the original filename in a data attribute
+                previewItem.dataset.originalFile = fileData.name;
 
                 if (fileData.name.toLowerCase().endsWith('.pdf')) {
-                    // Handle PDF files
                     const objectUrl = URL.createObjectURL(blob);
                     previewItem.dataset.pdfUrl = objectUrl;
                     previewItem.innerHTML = `
                         <i class="fas fa-file-pdf"></i>
                         <span>${fileData.name}</span>
-                        <button type="button" class="file-remove" onclick="event.stopPropagation(); removeFile(this)">
+                        <button type="button" class="file-remove" onclick="event.stopPropagation(); removeFile(this)" disabled>
                             <i class="fas fa-times"></i>
                         </button>
                     `;
 
-                    // Cleanup object URL when preview is removed
                     previewItem.addEventListener('remove', () => {
                         URL.revokeObjectURL(objectUrl);
                     });
                 } else {
-                    // Handle images
                     const reader = new FileReader();
                     reader.onload = function(e) {
                         previewItem.innerHTML = `
-                            <img src="${e.target.result}" alt="Preview">
-                            <button type="button" class="file-remove" onclick="event.stopPropagation(); removeFile(this)">
+                            <img src="${e.target.result}" alt="${fileData.name}">
+                            <button type="button" class="file-remove" onclick="event.stopPropagation(); removeFile(this)" disabled>
                                 <i class="fas fa-times"></i>
                             </button>
                         `;
                     };
-                    
-                    reader.onerror = function(error) {
-                        console.error('Error reading file:', error);
-                        showNotification('שגיאה בטעינת הקובץ המצורף', 'danger');
-                    };
-                    
                     reader.readAsDataURL(blob);
                 }
 
@@ -1533,6 +1527,7 @@ function populateExpenseReport(data) {
             }
         });
     }
+
 
     updateTotal();
 

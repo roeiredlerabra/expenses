@@ -1,0 +1,213 @@
+{
+    "status": "text",
+    "data": {
+      "signatures": [
+        {
+          "id": "text",
+          "file": "text"
+        },
+        {
+          "id": "text",
+          "file": "text"
+        },
+        {
+          "id": "text",
+          "file": "text"
+        }
+      ],
+      "files": [
+        {
+          "name": "text",
+          "file": "text"
+        },
+        {
+          "name": "text",
+          "file": "text"
+        }
+      ]
+    },
+    "expense_main": [
+      {
+        "@odata.etag": "text",
+        "ItemInternalId": "text",
+        "ID": "123",
+        "Title": "text",
+        "Month": "text",
+        "TotalAmount": "123",
+        "EmployeeName": {
+          "@odata.type": "text",
+          "Claims": "text",
+          "DisplayName": "text",
+          "Email": "text",
+          "Picture": "text",
+          "Department": "text",
+          "JobTitle": "text"
+        },
+        "EmployeeName#Claims": "text",
+        "Approver": {
+          "@odata.type": "text",
+          "Claims": "text",
+          "DisplayName": "text",
+          "Email": "text",
+          "Picture": "text",
+          "Department": "text",
+          "JobTitle": "text"
+        },
+        "Approver#Claims": "text",
+        "GUID0": "text",
+        "Modified": "text",
+        "Created": "text",
+        "Author": {
+          "@odata.type": "text",
+          "Claims": "text",
+          "DisplayName": "text",
+          "Email": "text",
+          "Picture": "text",
+          "Department": "text",
+          "JobTitle": "text"
+        },
+        "Author#Claims": "text",
+        "Editor": {
+          "@odata.type": "text",
+          "Claims": "text",
+          "DisplayName": "text",
+          "Email": "text",
+          "Picture": "text",
+          "Department": "text",
+          "JobTitle": "text"
+        },
+        "Editor#Claims": "text",
+        "{Identifier}": "text",
+        "{IsFolder}": "text",
+        "{Thumbnail}": {
+          "Large": null,
+          "Medium": null,
+          "Small": null
+        },
+        "{Link}": "text",
+        "{Name}": "text",
+        "{FilenameWithExtension}": "text",
+        "{Path}": "text",
+        "{FullPath}": "text",
+        "{HasAttachments}": "text",
+        "{VersionNumber}": "text"
+      }
+    ],
+    "expense_items": [
+      {
+        "@odata.etag": "text",
+        "ItemInternalId": "text",
+        "ID": "123",
+        "Title": "text",
+        "ExpenseReportId": {
+          "@odata.type": "text",
+          "Id": "123",
+          "Value": "text"
+        },
+        "ExpenseReportId#Id": "123",
+        "ExpenseReportId_x003a__x0020_Tit": {
+          "@odata.type": "text",
+          "Id": "123",
+          "Value": "text"
+        },
+        "ExpenseReportId_x003a__x0020_Tit#Id": "123",
+        "ExpenseType": "text",
+        "ExpenseDate": "text",
+        "InvoiceNumber": "text",
+        "Amount": "123",
+        "Modified": "text",
+        "Created": "text",
+        "Author": {
+          "@odata.type": "text",
+          "Claims": "text",
+          "DisplayName": "text",
+          "Email": "text",
+          "Picture": "text",
+          "Department": "text",
+          "JobTitle": "text"
+        },
+        "Author#Claims": "text",
+        "Editor": {
+          "@odata.type": "text",
+          "Claims": "text",
+          "DisplayName": "text",
+          "Email": "text",
+          "Picture": "text",
+          "Department": "text",
+          "JobTitle": "text"
+        },
+        "Editor#Claims": "text",
+        "{Identifier}": "text",
+        "{IsFolder}": "text",
+        "{Thumbnail}": {
+          "Large": null,
+          "Medium": null,
+          "Small": null
+        },
+        "{Link}": "text",
+        "{Name}": "text",
+        "{FilenameWithExtension}": "text",
+        "{Path}": "text",
+        "{FullPath}": "text",
+        "{HasAttachments}": "text",
+        "{VersionNumber}": "text"
+      },
+      {
+        "@odata.etag": "text",
+        "ItemInternalId": "text",
+        "ID": "123",
+        "Title": "text",
+        "ExpenseReportId": {
+          "@odata.type": "text",
+          "Id": "123",
+          "Value": "text"
+        },
+        "ExpenseReportId#Id": "123",
+        "ExpenseReportId_x003a__x0020_Tit": {
+          "@odata.type": "text",
+          "Id": "123",
+          "Value": "text"
+        },
+        "ExpenseReportId_x003a__x0020_Tit#Id": "123",
+        "ExpenseType": "text",
+        "InvoiceNumber": "text",
+        "Amount": "123",
+        "Modified": "text",
+        "Created": "text",
+        "Author": {
+          "@odata.type": "text",
+          "Claims": "text",
+          "DisplayName": "text",
+          "Email": "text",
+          "Picture": "text",
+          "Department": "text",
+          "JobTitle": "text"
+        },
+        "Author#Claims": "text",
+        "Editor": {
+          "@odata.type": "text",
+          "Claims": "text",
+          "DisplayName": "text",
+          "Email": "text",
+          "Picture": "text",
+          "Department": "text",
+          "JobTitle": "text"
+        },
+        "Editor#Claims": "text",
+        "{Identifier}": "text",
+        "{IsFolder}": "text",
+        "{Thumbnail}": {
+          "Large": null,
+          "Medium": null,
+          "Small": null
+        },
+        "{Link}": "text",
+        "{Name}": "text",
+        "{FilenameWithExtension}": "text",
+        "{Path}": "text",
+        "{FullPath}": "text",
+        "{HasAttachments}": "text",
+        "{VersionNumber}": "text"
+      }
+    ]
+  }
