@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html lang="he" dir="rtl" data-theme="light">
 
 <head>
     <meta charset="UTF-8">
@@ -1336,6 +1336,7 @@
     </div>
 
     <script>
+        
         // Initialize signature pads
         const signaturePads = {
             employeeSignature: initSignaturePad('employeeSignature'),
@@ -2173,9 +2174,9 @@
             });
 
             // Set initial theme based on user's system preferences
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                setTheme(true);
-            }
+            //if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+             //   setTheme(true);
+           // }
 
             // Listen for system theme changes
             window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
