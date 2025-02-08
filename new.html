@@ -2018,12 +2018,17 @@ if (floatingTotal) {
     const expenseCard = dropZone.closest('.expense-card');
     const previewContainer = dropZone.nextElementSibling;
 
+    // Check if important fields already have data
+    const amountInput = expenseCard.querySelector('.expense-amount');
+    const invoiceInput = expenseCard.querySelector('input[placeholder="הזן מספר חשבונית"]');
+    const hasExistingData = (amountInput?.value || invoiceInput?.value);
+
     for (const file of validFiles) {
         try {
             if (file.type.startsWith('image/')) {
-                // Handle image files as before
                 const reader = new FileReader();
-                reader.onload = function(e) {
+                reader.onload = async function(e) {
+                    // Create and add preview
                     const preview = document.createElement('div');
                     preview.className = 'file-preview-item';
                     preview.innerHTML = `
@@ -2032,14 +2037,44 @@ if (floatingTotal) {
                             <i class="fas fa-times"></i>
                         </button>
                     `;
-
+                    
                     preview.addEventListener('click', () => {
                         openPreview(preview.querySelector('img'));
                     });
-
+                    
                     previewContainer.appendChild(preview);
+
+                    // Only process receipt if no existing data
+                    if (!hasExistingData) {
+                        // Add loading overlay
+                        const loadingOverlay = document.createElement('div');
+                        loadingOverlay.className = 'processing-overlay';
+                        loadingOverlay.innerHTML = `
+                            <div class="processing-spinner"></div>
+                            <div>מעבד את הקבלה...</div>
+                        `;
+                        expenseCard.style.position = 'relative';
+                        expenseCard.appendChild(loadingOverlay);
+
+                        try {
+                            loadingOverlay.querySelector('div:not(.processing-spinner)').textContent = 'מזהה פרטי קבלה...';
+                            const base64Image = e.target.result.split(',')[1];
+                            const receiptData = await processReceiptImage(base64Image);
+                            
+                            loadingOverlay.querySelector('div:not(.processing-spinner)').textContent = 'ממלא נתונים...';
+                            await populateExpenseFields(expenseCard, receiptData);
+                            
+                            loadingOverlay.remove();
+                            showNotification('נתוני הקבלה זוהו והוזנו בהצלחה', 'success');
+                        } catch (error) {
+                            console.error('Error processing receipt:', error);
+                            loadingOverlay.remove();
+                            showNotification('לא ניתן היה לזהות את נתוני הקבלה באופן אוטומטי', 'warning');
+                        }
+                    }
                 };
                 reader.readAsDataURL(file);
+                
             } else if (file.type === 'application/pdf') {
                 // Create object URL for PDF files
                 const pdfUrl = URL.createObjectURL(file);
@@ -2053,14 +2088,14 @@ if (floatingTotal) {
                         <i class="fas fa-times"></i>
                     </button>
                 `;
-
+                
                 pdfPreview.addEventListener('click', () => {
                     openPreview(pdfPreview);
                 });
 
                 // Store the object URL for cleanup
                 pdfPreview.dataset.objectUrl = pdfUrl;
-
+                
                 previewContainer.appendChild(pdfPreview);
             }
         } catch (error) {
@@ -2074,7 +2109,6 @@ if (floatingTotal) {
         dropZone.style.display = 'none';
     }
 }
-
 function removeFile(button) {
     const previewItem = button.closest('.file-preview-item, .pdf-preview');
     
