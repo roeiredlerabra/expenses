@@ -7,7 +7,7 @@ let currentPage = 1;
 let initialScale = 1.0; 
 let currentScale = 1.0;
 
-async function renderPDF(pdfUrl, container) {
+async function renderPDF(base64Data, container) {
     try {
         if (typeof pdfjsLib === 'undefined') {
             throw new Error('PDF.js is not loaded');
@@ -44,7 +44,21 @@ async function renderPDF(pdfUrl, container) {
             </div>
         `;
 
-        const loadingTask = pdfjsLib.getDocument(pdfUrl);
+        // Convert base64 to binary data
+        const binaryString = atob(base64Data);
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+
+        // Create the proper parameter object for getDocument with binary data
+        const loadingTask = pdfjsLib.getDocument({
+            data: bytes.buffer,
+            cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
+            cMapPacked: true
+        });
+
         currentPdfDoc = await loadingTask.promise;
         
         document.getElementById('totalPages').textContent = currentPdfDoc.numPages;

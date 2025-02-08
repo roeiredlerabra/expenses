@@ -18,10 +18,12 @@
       "files": [
         {
           "name": "text",
+          "id": "123",
           "file": "text"
         },
         {
           "name": "text",
+          "id": "124",
           "file": "text"
         }
       ]

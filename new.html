@@ -1336,13 +1336,12 @@
     </div>
 
     <script>
-        async function initializeManagerReview() {
+async function initializeManagerReview() {
     // Get ID from URL parameters
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
     
     if (id) {
-        // This is a manager review
         try {
             // Show loading overlay
             const overlay = showLoadingOverlay('טוען נתוני דוח...');
@@ -1389,7 +1388,6 @@ function populateExpenseReport(data) {
     container.innerHTML = ''; // Clear existing expenses
     
     data.expense_items.forEach(item => {
-        // Determine expense type from the original data
         let expenseType = 'other'; // default
         if (item.ExpenseType.toLowerCase().includes('דלק')) {
             expenseType = 'fuel';
@@ -1400,16 +1398,15 @@ function populateExpenseReport(data) {
         quickAdd(expenseType);
         const card = container.firstElementChild;
         
+        card.dataset.expenseId = item.ID;
+        
         // Handle UTC date conversion for expense date
         let expenseDate = '';
         if (item.ExpenseDate) {
-            // Parse the UTC date and adjust to local date
             const date = new Date(item.ExpenseDate);
-            // Format as YYYY-MM-DD for input[type="date"]
-            expenseDate = date.toLocaleDateString('en-CA'); // en-CA produces YYYY-MM-DD format
+            expenseDate = date.toLocaleDateString('en-CA'); // YYYY-MM-DD format
         }
         
-        // Populate expense fields
         const dateInput = card.querySelector('input[type="date"]');
         const invoiceInput = card.querySelector('input[placeholder="הזן מספר חשבונית"]');
         const amountInput = card.querySelector('.expense-amount');
@@ -1418,82 +1415,66 @@ function populateExpenseReport(data) {
         if (invoiceInput) invoiceInput.value = item.InvoiceNumber || '';
         if (amountInput) amountInput.value = parseFloat(item.Amount) || 0;
 
-        // Make all expense fields readonly in manager review mode
         dateInput.readOnly = true;
         invoiceInput.readOnly = true;
         amountInput.readOnly = true;
     });
 
-    // Handle signatures
+    // Handle signatures (base64)
     if (data.data.signatures) {
-        data.data.signatures.forEach((sig, index) => {
-            if (sig.file) {
-                const padIds = ['employeeSignature', 'managerSignature', 'provadorSignature'];
-                const pad = signaturePads[padIds[index]];
-                
-                // Store the original file name/id in a data attribute on the canvas
-                const canvas = pad.canvas;
-                // Decode the URL-encoded filename
-                const decodedId = decodeURIComponent(sig.id.replace(/\+/g, ' '));
-                canvas.dataset.originalFile = decodedId;
-                
-                // Convert binary to base64 and draw on canvas
-                const blob = new Blob([sig.file], { type: 'image/png' });
-                const reader = new FileReader();
-                
-                reader.onload = function(e) {
-                    const img = new Image();
-                    img.onload = function() {
-                        const ctx = canvas.getContext('2d');
-                        
-                        // Clear the canvas first
-                        ctx.clearRect(0, 0, canvas.width, canvas.height);
-                        
-                        // Calculate scaling to maintain aspect ratio
-                        const scale = Math.min(
-                            canvas.width / img.width,
-                            canvas.height / img.height
-                        );
-                        
-                        // Calculate centered position
-                        const x = (canvas.width - img.width * scale) / 2;
-                        const y = (canvas.height - img.height * scale) / 2;
-                        
-                        // Draw image with proper scaling and centering
-                        ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
-                    };
-                    img.src = e.target.result;
-                };
-                
-                reader.readAsDataURL(blob);
-            }
-        });
-    }
+    data.data.signatures.forEach((sig, index) => {
+        if (sig.file) {
+            const padIds = ['employeeSignature', 'managerSignature', 'provadorSignature'];
+            const pad = signaturePads[padIds[index]];
+            
+            const canvas = pad.canvas;
+            canvas.dataset.originalFile = sig.id;
 
-    // Handle attached files
-    if (data.data.files) {
+            const img = new Image();
+            img.onload = function() {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                const scale = Math.min(
+                    canvas.width / img.width,
+                    canvas.height / img.height
+                );
+                
+                const x = (canvas.width - img.width * scale) / 2;
+                const y = (canvas.height - img.height * scale) / 2;
+                
+                ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+            };
+            // Add proper data URL prefix for JPEG images
+            img.src = 'data:image/jpeg;base64,' + sig.file;
+        }
+    });
+}
+
+// For attached files:
+if (data.data.files) {
         data.data.files.forEach(fileData => {
-            if (fileData.file) {
-                const container = document.querySelector('.expense-card:last-child .file-preview');
-                if (!container) {
+            if (fileData.file && fileData.id) {
+                const card = container.querySelector(`[data-expense-id="${fileData.id}"]`);
+                if (!card) {
+                    console.error(`No matching expense card found for file ID: ${fileData.id}`);
+                    return;
+                }
+
+                const previewContainer = card.querySelector('.file-preview');
+                if (!previewContainer) {
                     console.error('File preview container not found');
                     return;
                 }
 
-                const blob = new Blob([fileData.file], { 
-                    type: fileData.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/png'
-                });
-                
                 const previewItem = document.createElement('div');
-                previewItem.className = fileData.name.toLowerCase().endsWith('.pdf') ? 
-                    'file-preview-item pdf-preview' : 'file-preview-item';
+                const isPdf = fileData.name.toLowerCase().endsWith('.pdf');
+                previewItem.className = isPdf ? 'file-preview-item pdf-preview' : 'file-preview-item';
                 
-                // Store the original filename in a data attribute
-                previewItem.dataset.originalFile = fileData.name;
+                // Store the file data
+                previewItem.dataset.originalFile = fileData.file;
 
-                if (fileData.name.toLowerCase().endsWith('.pdf')) {
-                    const objectUrl = URL.createObjectURL(blob);
-                    previewItem.dataset.pdfUrl = objectUrl;
+                if (isPdf) {
                     previewItem.innerHTML = `
                         <i class="fas fa-file-pdf"></i>
                         <span>${fileData.name}</span>
@@ -1501,47 +1482,51 @@ function populateExpenseReport(data) {
                             <i class="fas fa-times"></i>
                         </button>
                     `;
-
-                    previewItem.addEventListener('remove', () => {
-                        URL.revokeObjectURL(objectUrl);
-                    });
                 } else {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        previewItem.innerHTML = `
-                            <img src="${e.target.result}" alt="${fileData.name}">
-                            <button type="button" class="file-remove" onclick="event.stopPropagation(); removeFile(this)" disabled>
-                                <i class="fas fa-times"></i>
-                            </button>
-                        `;
-                    };
-                    reader.readAsDataURL(blob);
+                    const mimeType = fileData.name.split('.').pop().toLowerCase() === 'png' ? 'image/png' : 'image/jpeg';
+                    const dataUrl = `data:${mimeType};base64,${fileData.file}`;
+                    
+                    previewItem.innerHTML = `
+                        <img src="${dataUrl}" alt="${fileData.name}">
+                        <button type="button" class="file-remove" onclick="event.stopPropagation(); removeFile(this)" disabled>
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
                 }
 
-                // Add click handler for preview
                 previewItem.addEventListener('click', () => {
                     openPreview(previewItem.querySelector('img') || previewItem);
                 });
 
-                container.appendChild(previewItem);
+                previewContainer.appendChild(previewItem);
+
+                // Hide file drop zone
+                const dropZone = card.querySelector('.file-drop-zone');
+                if (dropZone) {
+                    dropZone.style.display = 'none';
+                }
             }
         });
     }
-
 
     updateTotal();
 
     // If in manager review mode, disable appropriate controls
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('id')) {
-        // Disable all inputs except manager signature
+        document.querySelectorAll('.file-drop-zone').forEach(zone => {
+            zone.style.display = 'none';
+        });
+
         document.querySelectorAll('input, .file-remove').forEach(el => {
-            if (!el.closest('#managerSignature')) {
+            if (!el.closest('#managerSignature') && 
+                !el.classList.contains('theme-toggle') && 
+                !el.classList.contains('close-preview') &&
+                !el.classList.contains('submit-button')) {
                 el.disabled = true;
             }
         });
 
-        // Disable other signature pads
         ['employeeSignature', 'provadorSignature'].forEach(id => {
             if (signaturePads[id]) {
                 signaturePads[id].off();
@@ -1552,45 +1537,90 @@ function populateExpenseReport(data) {
 
 
 function setupManagerReviewMode() {
-    // Disable all inputs except manager signature and theme toggle
-    document.querySelectorAll('input, button').forEach(el => {
-        if (!el.closest('.signature-container') && !el.classList.contains('theme-toggle')) {
-            el.disabled = true;
-        }
-    });
+   // Disable all inputs except specified elements
+   document.querySelectorAll('input, button').forEach(el => {
+       if (!el.closest('.signature-container') && 
+           !el.classList.contains('theme-toggle') && 
+           !el.classList.contains('close-preview') &&
+           !el.classList.contains('submit-button')) {
+           el.disabled = true;
+       }
+   });
 
-    // Re-enable theme toggle if it was disabled
-    document.querySelector('.theme-toggle').disabled = false;
+   // Re-enable specific buttons that should always be active
+   const themeToggle = document.querySelector('.theme-toggle');
+   if (themeToggle) {
+       themeToggle.disabled = false;
+   }
 
-    // Rest of the function remains the same...
-    document.querySelector('.quick-add-bar').style.display = 'none';
-    document.querySelectorAll('.btn-outline-danger').forEach(btn => btn.style.display = 'none');
-    document.querySelectorAll('.file-drop-zone').forEach(zone => zone.style.display = 'none');
+   const closePreviewBtn = document.querySelector('.close-preview');
+   if (closePreviewBtn) {
+       closePreviewBtn.disabled = false;
+   }
 
-    // Modify submit button
-    const submitButton = document.querySelector('.submit-button');
-    submitButton.innerHTML = '<i class="fas fa-check"></i> אשר דוח';
-    submitButton.disabled = false;
+   // Hide elements that shouldn't be visible in review mode
+   const elementsToHide = [
+       '.quick-add-bar',
+       '.btn-outline-danger', 
+       '.file-drop-zone',
+       '.signature-actions button:not([onclick*="managerSignature"])', // Hide all signature clear buttons except manager's
+       '.file-remove' // Hide file remove buttons
+   ];
 
-    // Show manager review header
-    const header = document.createElement('div');
-    header.className = 'alert alert-info mb-4';
-    header.innerHTML = `
-        <div class="d-flex align-items-center">
-            <i class="fas fa-info-circle me-2"></i>
-            <div>הנך מתבקש/ת לסקור את הדוח ולחתום כמנהל/ת ישיר/ה</div>
-        </div>
-    `;
-    document.querySelector('.container').insertBefore(header, document.querySelector('.progress'));
+   elementsToHide.forEach(selector => {
+       document.querySelectorAll(selector).forEach(el => {
+           el.style.display = 'none';
+       });
+   });
 
-    // Enable only manager signature pad
-    Object.keys(signaturePads).forEach(key => {
-        if (key !== 'managerSignature') {
-            signaturePads[key].off();
-        }
-    });
+   // Make form fields readonly
+   document.querySelectorAll('input[type="text"], input[type="number"], input[type="date"]').forEach(input => {
+       input.readOnly = true;
+   });
+
+   // Show manager review header
+   const existingHeader = document.querySelector('.manager-review-header');
+   if (!existingHeader) {
+       const header = document.createElement('div');
+       header.className = 'alert alert-info mb-4 manager-review-header';
+       header.innerHTML = `
+           <div class="d-flex align-items-center">
+               <i class="fas fa-info-circle me-2"></i>
+               <div>הנך מתבקש/ת לסקור את הדוח ולחתום כמנהל/ת ישיר/ה</div>
+           </div>
+       `;
+
+   }
+
+   // Configure submit button for manager approval
+   const submitButton = document.querySelector('.submit-button');
+   if (submitButton) {
+       submitButton.innerHTML = '<i class="fas fa-check"></i> אשר דוח';
+       submitButton.disabled = false;
+       submitButton.classList.add('manager-approve-button');
+   }
+
+   // Disable signatures except manager's
+   Object.keys(signaturePads).forEach(key => {
+       const pad = signaturePads[key];
+       if (key !== 'managerSignature' && pad) {
+           pad.off();
+           const canvas = pad.canvas;
+           if (canvas) {
+               canvas.style.cursor = 'not-allowed';
+               canvas.style.opacity = '0.7';
+           }
+       }
+   });
+
+   // Add manager review class to body for potential CSS targeting
+   document.body.classList.add('manager-review-mode');
+
+   // Update progress bar to exclude employee signature requirement
+   updateProgress();
 }
-        // Initialize signature pads
+
+// Initialize signature pads
         const signaturePads = {
             employeeSignature: initSignaturePad('employeeSignature'),
             managerSignature: initSignaturePad('managerSignature'),
@@ -1871,80 +1901,47 @@ function setupManagerReviewMode() {
         }
 
         async function handleFiles(files, dropZone) {
-            const validFiles = Array.from(files).filter(file => {
-                const type = file.type.toLowerCase();
-                return type.startsWith('image/') || type === 'application/pdf';
-            });
+    const validFiles = Array.from(files).filter(file => {
+        const type = file.type.toLowerCase();
+        return type.startsWith('image/') || type === 'application/pdf';
+    });
 
-            if (validFiles.length !== files.length) {
-                showNotification('רק קבצי תמונה ו-PDF מותרים להעלאה', 'warning');
-            }
+    if (validFiles.length !== files.length) {
+        showNotification('רק קבצי תמונה ו-PDF מותרים להעלאה', 'warning');
+    }
 
-            const expenseCard = dropZone.closest('.expense-card');
-            const previewContainer = dropZone.nextElementSibling;
+    const expenseCard = dropZone.closest('.expense-card');
+    const previewContainer = dropZone.nextElementSibling;
 
-            // Check if important fields already have data
-            const amountInput = expenseCard.querySelector('.expense-amount');
-            const invoiceInput = expenseCard.querySelector('input[placeholder="הזן מספר חשבונית"]');
-            const hasExistingData = (amountInput?.value || invoiceInput?.value);
-
-            for (const file of files) {
-                try {
-                    if (file.type.startsWith('image/')) {
-                        const reader = new FileReader();
-                        reader.onload = async function (e) {
-                            // Create and add preview
-                            const preview = document.createElement('div');
-                            preview.className = 'file-preview-item';
-                            preview.innerHTML = `
+    for (const file of validFiles) {
+        try {
+            if (file.type.startsWith('image/')) {
+                // Handle image files as before
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.createElement('div');
+                    preview.className = 'file-preview-item';
+                    preview.innerHTML = `
                         <img src="${e.target.result}" alt="Preview">
                         <button type="button" class="file-remove" onclick="event.stopPropagation(); removeFile(this)">
                             <i class="fas fa-times"></i>
                         </button>
                     `;
 
-                            preview.addEventListener('click', () => {
-                                openPreview(preview.querySelector('img'));
-                            });
+                    preview.addEventListener('click', () => {
+                        openPreview(preview.querySelector('img'));
+                    });
 
-                            previewContainer.appendChild(preview);
-
-                            // Only process receipt if no existing data
-                            if (!hasExistingData) {
-                                // Add loading overlay
-                                const loadingOverlay = document.createElement('div');
-                                loadingOverlay.className = 'processing-overlay';
-                                loadingOverlay.innerHTML = `
-                            <div class="processing-spinner"></div>
-                            <div>מעבד את הקבלה...</div>
-                        `;
-                                expenseCard.style.position = 'relative';
-                                expenseCard.appendChild(loadingOverlay);
-
-                                try {
-                                    loadingOverlay.querySelector('div:not(.processing-spinner)').textContent = 'מזהה פרטי קבלה...';
-                                    const base64Image = e.target.result.split(',')[1];
-                                    const receiptData = await processReceiptImage(base64Image);
-
-                                    loadingOverlay.querySelector('div:not(.processing-spinner)').textContent = 'ממלא נתונים...';
-                                    await populateExpenseFields(expenseCard, receiptData);
-
-                                    loadingOverlay.remove();
-                                    showNotification('נתוני הקבלה זוהו והוזנו בהצלחה', 'success');
-                                } catch (error) {
-                                    console.error('Error processing receipt:', error);
-                                    loadingOverlay.remove();
-                                    showNotification('לא ניתן היה לזהות את נתוני הקבלה באופן אוטומטי', 'warning');
-                                }
-                            }
-                        };
-                        reader.readAsDataURL(file);
-
-                    } else if (file.type === 'application/pdf') {
-                        const pdfPreview = document.createElement('div');
-                        pdfPreview.className = 'file-preview-item pdf-preview';
-                        pdfPreview.dataset.pdfUrl = URL.createObjectURL(file);
-                        pdfPreview.innerHTML = `
+                    previewContainer.appendChild(preview);
+                };
+                reader.readAsDataURL(file);
+            } else if (file.type === 'application/pdf') {
+                // Create object URL for PDF files
+                const pdfUrl = URL.createObjectURL(file);
+                const pdfPreview = document.createElement('div');
+                pdfPreview.className = 'file-preview-item pdf-preview';
+                pdfPreview.dataset.pdfUrl = pdfUrl;
+                pdfPreview.innerHTML = `
                     <i class="fas fa-file-pdf"></i>
                     <span>${file.name}</span>
                     <button type="button" class="file-remove" onclick="event.stopPropagation(); removeFile(this)">
@@ -1952,23 +1949,37 @@ function setupManagerReviewMode() {
                     </button>
                 `;
 
-                        pdfPreview.addEventListener('click', () => {
-                            openPreview(pdfPreview);
-                        });
+                pdfPreview.addEventListener('click', () => {
+                    openPreview(pdfPreview);
+                });
 
-                        previewContainer.appendChild(pdfPreview);
-                    }
-                } catch (error) {
-                    console.error('Error handling file:', error);
-                    showNotification('שגיאה בטעינת הקובץ', 'danger');
-                }
+                // Store the object URL for cleanup
+                pdfPreview.dataset.objectUrl = pdfUrl;
+
+                previewContainer.appendChild(pdfPreview);
             }
+        } catch (error) {
+            console.error('Error handling file:', error);
+            showNotification('שגיאה בטעינת הקובץ: ' + error.message, 'danger');
         }
+    }
 
+    // Hide drop zone if files were added
+    if (validFiles.length > 0) {
+        dropZone.style.display = 'none';
+    }
+}
 
-        function removeFile(button) {
-            button.closest('.file-preview-item, .pdf-preview').remove();
-        }
+function removeFile(button) {
+    const previewItem = button.closest('.file-preview-item, .pdf-preview');
+    
+    // Cleanup object URL if it exists
+    if (previewItem.dataset.objectUrl) {
+        URL.revokeObjectURL(previewItem.dataset.objectUrl);
+    }
+    
+    previewItem.remove();
+}
         // Animate number changes
         function animateNumber(start, end, options) {
             const startTime = performance.now();
@@ -2485,52 +2496,61 @@ function setupManagerReviewMode() {
             });
         }
         function openPreview(element) {
-            const overlay = document.getElementById('filePreviewOverlay');
-            const container = overlay.querySelector('.preview-container');
+    const overlay = document.getElementById('filePreviewOverlay');
+    const container = overlay.querySelector('.preview-container');
 
-            // Clear previous content
-            container.innerHTML = '';
+    // Clear previous content
+    container.innerHTML = '';
 
-            try {
-                if (element.tagName === 'IMG') {
-                    // Handle image preview
-                    container.classList.remove('pdf-mode');
-                    const img = document.createElement('img');
-                    img.src = element.src;
-                    container.appendChild(img);
-                } else if (element.classList.contains('pdf-preview')) {
-                    // Handle PDF preview
-                    container.classList.add('pdf-mode');
-                    if (typeof renderPDF === 'function') {
-                        renderPDF(element.dataset.pdfUrl, container);
-                    } else {
-                        throw new Error('PDF viewer not initialized');
-                    }
+    try {
+        if (element.tagName === 'IMG') {
+            // Handle image preview
+            container.classList.remove('pdf-mode');
+            const img = document.createElement('img');
+            img.src = element.src;
+            container.appendChild(img);
+        } else if (element.classList.contains('pdf-preview')) {
+            // Handle PDF preview
+            container.classList.add('pdf-mode');
+            
+            // First check for base64 data (review mode)
+            const fileData = element.closest('.file-preview-item')?.dataset.originalFile;
+            if (fileData) {
+                // In review mode - use the base64 data
+                renderPDF(fileData, container);
+            } else {
+                // In upload mode - use the object URL
+                const pdfUrl = element.dataset.pdfUrl;
+                if (!pdfUrl) {
+                    throw new Error('PDF data not found');
                 }
-
-                // Show overlay with animation
-                overlay.classList.add('active');
-
-                // Add keyboard listener for escape key
-                document.addEventListener('keydown', handleEscKey);
-            } catch (error) {
-                console.error('Preview error:', error);
-                showNotification('שגיאה בטעינת התצוגה המקדימה', 'danger');
+                renderPDF(pdfUrl, container);
             }
         }
 
+        // Show overlay with animation
+        overlay.classList.add('active');
+
+        // Add keyboard listener for escape key
+        document.addEventListener('keydown', handleEscKey);
+    } catch (error) {
+        console.error('Preview error:', error);
+        showNotification('שגיאה בטעינת התצוגה המקדימה: ' + error.message, 'danger');
+    }
+}
         // Function to close preview
         function closePreview() {
-            const overlay = document.getElementById('filePreviewOverlay');
-            overlay.classList.remove('active');
+    const overlay = document.getElementById('filePreviewOverlay');
+    overlay.classList.remove('active');
 
-            // Cleanup PDF viewer if active
-            currentPdfDoc = null;
-            currentScale = 1.0;
+    // Cleanup PDF viewer
+    currentPdfDoc = null;
+    currentScale = initialScale;
+    currentPage = 1;
 
-            // Remove event listeners
-            document.removeEventListener('keydown', handleEscKey);
-        }
+    // Remove event listeners
+    document.removeEventListener('keydown', handleEscKey);
+}
 
         // Handle escape key press
         function handleEscKey(e) {
