@@ -1483,6 +1483,8 @@ function populateExpenseReport(data) {
     const container = document.getElementById('expensesContainer');
     container.innerHTML = ''; // Clear existing expenses
     
+    let totalAmount = 0; // Initialize total
+
     // Add expense items
     data.expense_items.forEach(item => {
         let expenseType = 'other';
@@ -1517,13 +1519,18 @@ function populateExpenseReport(data) {
             invoiceInput.readOnly = true;
         }
         if (amountInput) {
-            amountInput.value = parseFloat(item.Amount) || 0;
+            const amount = parseFloat(item.Amount) || 0;
+            amountInput.value = amount;
             amountInput.readOnly = true;
+            totalAmount += amount; // Add to running total
         }
     });
 
-    // Update the total using the existing updateTotal function
-    updateTotal();
+    // Set the initial total amount
+    const totalElement = document.getElementById('totalAmount');
+    if (totalElement) {
+        totalElement.textContent = totalAmount.toFixed(2);
+    }
 
     // Handle signatures
     if (data.data.signatures) {
@@ -1623,7 +1630,9 @@ function populateExpenseReport(data) {
             }
         });
     }
-
+    setTimeout(() => {
+        updateTotal();
+    }, 0);
     // Update progress bar
     updateProgress();
 }
