@@ -1469,53 +1469,72 @@ async function handleNewSubmission(e) {
     ];
 
     const overlay = document.createElement('div');
-    overlay.className = 'position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center loading-overlay';
-    overlay.style.cssText = `
-        background-color: rgba(0,0,0,0.5);
-        backdrop-filter: blur(5px);
-        z-index: 9999;
-    `;
+    overlay.className = 'fixed-top vh-100 vw-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50 backdrop-blur';
 
     const content = document.createElement('div');
-    content.className = 'bg-white dark:bg-gray-800 rounded-lg p-4 max-w-md w-full mx-4';
+    content.className = 'card shadow-lg border-0 mx-3';
+    content.style.maxWidth = '450px';
+    
     content.innerHTML = `
-        <div class="text-center mb-4">
-            <div class="spinner-border text-primary mb-2" role="status">
-                <span class="visually-hidden">טוען...</span>
+        <div class="card-body p-4">
+            <div class="text-center mb-4">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">טוען...</span>
+                </div>
+                <h5 class="mb-0 text-body">${initialMessage}</h5>
             </div>
-            <h5 class="mb-3">${initialMessage}</h5>
-        </div>
-        <div class="stages-container">
-            ${stages.map((stage, index) => `
-                <div class="stage-item mb-3" data-stage="${stage.id}">
-                    <div class="d-flex align-items-center">
-                        <div class="stage-icon me-3">
-                            <i class="fas fa-${stage.icon} text-muted"></i>
-                        </div>
-                        <div class="flex-grow-1">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="stage-label">${stage.label}</span>
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="stage-duration text-muted small">0ms</span>
-                                    <span class="stage-status">
-                                        <i class="fas fa-circle text-muted"></i>
-                                    </span>
-                                </div>
+            <div class="stages-container">
+                ${stages.map((stage, index) => `
+                    <div class="stage-item mb-3" data-stage="${stage.id}">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="stage-icon">
+                                <i class="fas fa-${stage.icon} text-muted"></i>
                             </div>
-                            <div class="progress" style="height: 4px;">
-                                <div class="progress-bar bg-primary" role="progressbar" 
-                                     style="width: 0%" 
-                                     aria-valuenow="0" 
-                                     aria-valuemin="0" 
-                                     aria-valuemax="100">
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="stage-label fw-medium">${stage.label}</span>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="stage-duration text-muted small">0ms</span>
+                                        <span class="stage-status">
+                                            <i class="fas fa-circle fs-6 text-muted opacity-50"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="progress rounded-pill" style="height: 6px;">
+                                    <div class="progress-bar bg-primary rounded-pill" 
+                                         role="progressbar" 
+                                         style="width: 0%" 
+                                         aria-valuenow="0" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            `).join('')}
+                `).join('')}
+            </div>
         </div>
     `;
+
+    // Add some additional class styling
+    const style = document.createElement('style');
+    style.textContent = `
+        .backdrop-blur {
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+        .stage-item {
+            transition: opacity 0.3s ease;
+        }
+        .stage-item.completed .stage-icon i {
+            color: var(--bs-success) !important;
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+    `;
+    document.head.appendChild(style);
 
     overlay.appendChild(content);
     document.body.appendChild(overlay);
@@ -1542,10 +1561,10 @@ async function handleNewSubmission(e) {
         },
         close: () => {
             overlay.remove();
+            style.remove();
         }
     };
-}     
-       
+}   
         function removeExistingOverlays() {
             const existingOverlays = document.querySelectorAll('.loading-overlay');
             existingOverlays.forEach(overlay => overlay.remove());
