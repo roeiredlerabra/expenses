@@ -171,15 +171,81 @@
         initializeNewSubmission();
     }
 }
-function initializeManagerReview() {
+function createTimingProgressIndicator() {
+    const startTime = performance.now();
+    const progress = showLoadingOverlay('טוען נתוני דוח...');
+
+    function formatDuration(ms) {
+        if (ms < 1000) return `${Math.round(ms)}ms`;
+        const seconds = ms / 1000;
+        if (seconds < 60) return `${seconds.toFixed(1)}s`;
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = (seconds % 60).toFixed(0);
+        return `${minutes}:${remainingSeconds.padStart(2, '0')}`;
+    }
+
+    return {
+        updateFetchProgress: async (fetchPromise) => {
+            try {
+                // Start connection phase
+                progress.updateStage('queued', 100);
+                progress.updateStage('connecting', 0);
+                
+                const response = await fetchPromise;
+                const clonedResponse = response.clone(); // Clone immediately after getting response
+                
+                // Connection complete, start processing
+                progress.updateStage('connecting', 100);
+                progress.updateStage('processing', 50);
+
+                const reader = response.body.getReader();
+                const contentLength = +response.headers.get('Content-Length') || 0;
+                let receivedLength = 0;
+
+                // Start download phase
+                progress.updateStage('processing', 100);
+                progress.updateStage('downloading', 0);
+
+                // Read the stream
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    receivedLength += value.length;
+                    const downloadProgress = contentLength ? 
+                        Math.round((receivedLength / contentLength) * 100) : 
+                        50;
+
+                    progress.updateStage('downloading', downloadProgress);
+                    
+                    // Update elapsed time
+                    const elapsed = formatDuration(performance.now() - startTime);
+                    progress.setMessage(`טוען נתוני דוח... (${elapsed})`);
+                }
+
+                // Complete download phase
+                progress.updateStage('downloading', 100);
+
+                // Return the cloned response that hasn't been read
+                return clonedResponse;
+
+            } catch (error) {
+                throw error;
+            }
+        },
+        close: () => progress.close()
+    };
+}
+
+async function initializeManagerReview() {
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
     
     if (id) {
+        const progressTracker = createTimingProgressIndicator();
+        
         try {
-            const overlay = showLoadingOverlay('טוען נתוני דוח...');
-            
-            fetch('https://prod-231.westeurope.logic.azure.com:443/workflows/5e62cd12d64e41b590dfe658c682446d/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=lf93ZLn6PE3PLfqJZkwQmbcFuOiwLD2MLgbUN8tGzhs', {
+            const fetchPromise = fetch('https://prod-231.westeurope.logic.azure.com:443/workflows/5e62cd12d64e41b590dfe658c682446d/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=lf93ZLn6PE3PLfqJZkwQmbcFuOiwLD2MLgbUN8tGzhs', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -188,27 +254,26 @@ function initializeManagerReview() {
                     id: id,
                     action: "get-report"  
                 })
-            })
-            .then(response => response.json())
-            .then(data => {
-                populateExpenseReport(data);
-                setupManagerReviewMode(data);
-                hideLoadingOverlay();
-            })
-            .catch(error => {
-                console.error('Error fetching expense report:', error);
-                hideLoadingOverlay();
-                showNotification('שגיאה בטעינת הדוח: ' + error.message, 'danger');
             });
+
+            // Track the fetch progress and get the cloned response
+            const clonedResponse = await progressTracker.updateFetchProgress(fetchPromise);
+            
+            // Use the cloned response to get JSON
+            const data = await clonedResponse.json();
+            
+            populateExpenseReport(data);
+            setupManagerReviewMode(data);
+            
+            progressTracker.close();
             
         } catch (error) {
-            console.error('Error:', error);
-            hideLoadingOverlay();
-            showNotification('שגיאה: ' + error.message, 'danger');
+            console.error('Error fetching expense report:', error);
+            progressTracker.close();
+            showNotification('שגיאה בטעינת הדוח: ' + error.message, 'danger');
         }
     }
 }
-
 function initializeNewSubmission() {
     // Set current month as default
     const today = new Date();
@@ -1393,27 +1458,94 @@ async function handleNewSubmission(e) {
                 }
             });
         }
-        function showLoadingOverlay(message = 'שולח נתונים...') {
-            removeExistingOverlays();
+        function showLoadingOverlay(initialMessage = 'טוען נתונים...') {
+    removeExistingOverlays();
 
-            const overlay = document.createElement('div');
-            overlay.className = 'position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center loading-overlay';
-            overlay.style.cssText = `
+    const stages = [
+        { id: 'queued', label: 'בתור לעיבוד', icon: 'clock' },
+        { id: 'connecting', label: 'מתחבר לשרת', icon: 'link' },
+        { id: 'processing', label: 'מעבד נתונים', icon: 'cog' },
+        { id: 'downloading', label: 'מוריד תוכן', icon: 'download' }
+    ];
+
+    const overlay = document.createElement('div');
+    overlay.className = 'position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center loading-overlay';
+    overlay.style.cssText = `
         background-color: rgba(0,0,0,0.5);
         backdrop-filter: blur(5px);
         z-index: 9999;
     `;
-            overlay.innerHTML = `
-        <div class="text-center">
-            <div class="spinner-border text-light mb-2" role="status">
+
+    const content = document.createElement('div');
+    content.className = 'bg-white dark:bg-gray-800 rounded-lg p-4 max-w-md w-full mx-4';
+    content.innerHTML = `
+        <div class="text-center mb-4">
+            <div class="spinner-border text-primary mb-2" role="status">
                 <span class="visually-hidden">טוען...</span>
             </div>
-            <div class="text-light">${message}</div>
+            <h5 class="mb-3">${initialMessage}</h5>
+        </div>
+        <div class="stages-container">
+            ${stages.map((stage, index) => `
+                <div class="stage-item mb-3" data-stage="${stage.id}">
+                    <div class="d-flex align-items-center">
+                        <div class="stage-icon me-3">
+                            <i class="fas fa-${stage.icon} text-muted"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="stage-label">${stage.label}</span>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="stage-duration text-muted small">0ms</span>
+                                    <span class="stage-status">
+                                        <i class="fas fa-circle text-muted"></i>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="progress" style="height: 4px;">
+                                <div class="progress-bar bg-primary" role="progressbar" 
+                                     style="width: 0%" 
+                                     aria-valuenow="0" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('')}
         </div>
     `;
-            document.body.appendChild(overlay);
-            return overlay;
+
+    overlay.appendChild(content);
+    document.body.appendChild(overlay);
+
+    return {
+        updateStage: (stageId, progress) => {
+            const stageElement = overlay.querySelector(`[data-stage="${stageId}"]`);
+            if (!stageElement) return;
+
+            const progressBar = stageElement.querySelector('.progress-bar');
+            if (progressBar) {
+                progressBar.style.width = `${progress}%`;
+                progressBar.setAttribute('aria-valuenow', progress);
+            }
+        },
+        getStageElement: (stageId) => {
+            return overlay.querySelector(`[data-stage="${stageId}"]`);
+        },
+        setMessage: (message) => {
+            const messageElement = content.querySelector('h5');
+            if (messageElement) {
+                messageElement.textContent = message;
+            }
+        },
+        close: () => {
+            overlay.remove();
         }
+    };
+}     
+       
         function removeExistingOverlays() {
             const existingOverlays = document.querySelectorAll('.loading-overlay');
             existingOverlays.forEach(overlay => overlay.remove());
@@ -1566,7 +1698,7 @@ async function handleNewSubmission(e) {
 
         // Initialize form
         window.addEventListener('load', () => {
-            initializeManagerReview();
+
             initializeForm();
             // Set current month as default
             const today = new Date();
