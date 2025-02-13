@@ -628,30 +628,31 @@ function setupManagerReviewMode(data) {
     const img = new Image();
     
     img.onload = function() {
-        // Get the actual canvas display dimensions
-        const displayWidth = canvas.width / window.devicePixelRatio;
-        const displayHeight = canvas.height / window.devicePixelRatio;
-        
-        // Calculate scale to fit the entire signature
-        const scaleWidth = displayWidth / 432;  // Original width
-        const scaleHeight = displayHeight / 187; // Original height
-        const scale = Math.min(scaleWidth, scaleHeight);
-        
-        // Calculate centered position
-        const centerX = (displayWidth - (432 * scale)) / 2;
-        const centerY = (displayHeight - (187 * scale)) / 2;
-        
         // Clear any existing content
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Draw the image at the calculated position and scale
-        ctx.drawImage(
-            img,
-            centerX * window.devicePixelRatio,
-            centerY * window.devicePixelRatio,
-            432 * scale * window.devicePixelRatio,
-            187 * scale * window.devicePixelRatio
-        );
+        // Get the device pixel ratio and canvas display size
+        const dpr = window.devicePixelRatio || 1;
+        const displayWidth = canvas.width / dpr;
+        const displayHeight = canvas.height / dpr;
+        
+        // Calculate scale to fit signature within 80% of the canvas
+        const scaleWidth = (displayWidth * 0.99) / img.width;
+        const scaleHeight = (displayHeight * 0.99) / img.height;
+        const scale = Math.min(scaleWidth, scaleHeight);
+        
+        // Calculate dimensions that maintain aspect ratio
+        const finalWidth = img.width * scale;
+        const finalHeight = img.height * scale;
+        
+        // Center the signature
+        const x = (displayWidth - finalWidth) / 2;
+        const y = (displayHeight - finalHeight) / 2;
+        
+        // Draw the image with proper DPR scaling
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.drawImage(img, x, y, finalWidth, finalHeight);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
         
         // Mark the signature pad as having content
         if (padInstance) {
@@ -663,13 +664,27 @@ function setupManagerReviewMode(data) {
 }
 function initSignaturePad(elementId) {
     const canvas = document.getElementById(elementId);
-    const rect = canvas.getBoundingClientRect();
-
-    // Set initial canvas size
-    canvas.width = rect.width * window.devicePixelRatio;
-    canvas.height = rect.height * window.devicePixelRatio;
     
-    // Configure pad
+    // Function to properly resize canvas
+    function resizeCanvas() {
+        const rect = canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        
+        // Set canvas size accounting for device pixel ratio
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        
+        // Scale the context to ensure correct drawing
+        const ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+        
+
+    }
+    
+    // Initial resize
+    resizeCanvas();
+    
+    // Configure pad with proper coordinate transformation
     const pad = new SignaturePad(canvas, {
         penColor: getSignatureColor(),
         backgroundColor: 'transparent',
@@ -677,26 +692,57 @@ function initSignaturePad(elementId) {
         minWidth: 0.5,
         maxWidth: 2.5,
         throttle: 16,
-        minDistance: 0.5
+        minDistance: 0.5,
+        dotSize: 1.5
     });
 
-    // Handle resize
-    const handleResize = () => {
-        const rect = canvas.getBoundingClientRect();
-        canvas.width = rect.width * window.devicePixelRatio;  // Fixed here
-        canvas.height = rect.height * window.devicePixelRatio; // Fixed here
+    // Override the _handleMouseEvents and _handleTouchEvents methods to fix coordinate mapping
+    const originalMouseEvents = pad._handleMouseEvents;
+    const originalTouchEvents = pad._handleTouchEvents;
 
+    pad._handleMouseEvents = function() {
+        originalMouseEvents.call(this);
+        this._canvas.addEventListener("mousedown", function(event) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            event._x = (event.clientX - rect.left) * scaleX;
+            event._y = (event.clientY - rect.top) * scaleY;
+        }, false);
+    };
+
+    pad._handleTouchEvents = function() {
+        originalTouchEvents.call(this);
+        this._canvas.addEventListener("touchstart", function(event) {
+            const rect = canvas.getBoundingClientRect();
+            const touch = event.changedTouches[0];
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            event._x = (touch.clientX - rect.left) * scaleX;
+            event._y = (touch.clientY - rect.top) * scaleY;
+        }, false);
+    };
+
+    // Handle window resize
+    const handleResize = () => {
+        const data = pad.toData();
+        resizeCanvas();
         if (canvas.dataset.originalSignature) {
             drawSignatureToCanvas(canvas, canvas.dataset.originalSignature, pad);
+        } else if (data) {
+            pad.fromData(data);
         }
     };
 
-    // Add resize event listener
-    window.addEventListener('resize', handleResize);
+    // Add resize event listener with debounce
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(handleResize, 100);
+    });
 
     return pad;
 }
-
         function getSignatureColor() {
             const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
             return isDarkMode ? '#ffffff' : '#121f3f'; // White for dark mode, Abra navy for light mode
