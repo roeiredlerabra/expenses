@@ -533,6 +533,11 @@ function setupManagerReviewMode(data) {
                     canvas.style.cursor = 'not-allowed';
                     canvas.style.opacity = '0.7';
                 }
+                // Hide all clear buttons when finalized
+                const clearButton = canvas.closest('.signature-container').querySelector('.signature-actions button');
+                if (clearButton) {
+                    clearButton.style.display = 'none';
+                }
             } else {
                 // Normal behavior - only manager signature is editable
                 if (key !== 'managerSignature') {
@@ -542,12 +547,22 @@ function setupManagerReviewMode(data) {
                         canvas.style.cursor = 'not-allowed';
                         canvas.style.opacity = '0.7';
                     }
+                    // Hide clear button for non-manager signatures
+                    const clearButton = canvas.closest('.signature-container').querySelector('.signature-actions button');
+                    if (clearButton) {
+                        clearButton.style.display = 'none';
+                    }
                 } else {
                     signaturePads[key].on();
                     const canvas = signaturePads[key].canvas;
                     if (canvas) {
                         canvas.style.cursor = 'crosshair';
                         canvas.style.opacity = '1';
+                    }
+                    // Show clear button for manager signature
+                    const clearButton = canvas.closest('.signature-container').querySelector('.signature-actions button');
+                    if (clearButton) {
+                        clearButton.style.display = 'block';
                     }
                 }
             }
@@ -587,7 +602,6 @@ function setupManagerReviewMode(data) {
         '.quick-add-bar',
         '.btn-outline-danger', 
         '.file-drop-zone',
-        '.signature-actions button',
         '.file-remove'
     ];
 
