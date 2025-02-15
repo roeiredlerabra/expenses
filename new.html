@@ -300,9 +300,13 @@ function initializeNewSubmission() {
     // Hide manager and provider signature sections
     const signatureSections = document.querySelectorAll('.signature-container');
     signatureSections.forEach((section, index) => {
-        if (index !== 0) { // Keep only the employee signature (first one)
-            section.style.display = 'none';
-        }
+        if (index !== 0) {
+  // Hide all signature sections except the first one (employee signature)
+  section.style.display = 'none';
+} else {
+  // Show the first signature section (employee signature)
+  section.style.display = 'block';
+}
     });
 
     // Set correct aspect ratio for employee signature canvas
