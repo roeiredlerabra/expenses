@@ -296,7 +296,35 @@ function initializeNewSubmission() {
     // Hide department field for new submission
     const departmentField = document.querySelector('.col-md-4:last-child');
     departmentField.style.display = 'none';
+
+    // Hide manager and provider signature sections
+    const signatureSections = document.querySelectorAll('.signature-container');
+    signatureSections.forEach((section, index) => {
+        if (index !== 0) { // Keep only the employee signature (first one)
+            section.style.display = 'none';
+        }
+    });
+
+    // Set correct aspect ratio for employee signature canvas
+    const employeeCanvas = document.getElementById('employeeSignature');
+    if (employeeCanvas) {
+        const containerWidth = employeeCanvas.parentElement.offsetWidth;
+        const canvasHeight = containerWidth / 2.34; // Apply 2.34:1 ratio
+        employeeCanvas.style.height = `${canvasHeight}px`;
+        
+        // Force canvas resize after setting new dimensions
+        if (signaturePads.employeeSignature) {
+            const rect = employeeCanvas.getBoundingClientRect();
+            employeeCanvas.width = rect.width * window.devicePixelRatio;
+            employeeCanvas.height = rect.height * window.devicePixelRatio;
+            
+            const ctx = employeeCanvas.getContext('2d');
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            signaturePads.employeeSignature.clear(); // Clear and reinitialize
+        }
+    }
 }
+
 function populateExpenseReport(data) {
     // Update the employee name label and input type
     const employeeNameLabel = document.querySelector('input[name="employeeName"]').previousElementSibling;
@@ -1482,7 +1510,7 @@ document.getElementById('expenseForm').addEventListener('submit', async (e) => {
 
 async function handleNewSubmission(e) {
     if (!validateForm()) {
-        showNotification('נא למלא את כל השדות הנדרשים', 'warning');
+       
         return;
     }
 
@@ -1659,34 +1687,160 @@ async function handleNewSubmission(e) {
             existingOverlays.forEach(overlay => overlay.remove());
         }
         function validateForm() {
-            const form = document.getElementById('expenseForm');
-            const requiredFields = form.querySelectorAll('[required]');
+    const form = document.getElementById('expenseForm');
+    const urlParams = new URLSearchParams(window.location.search);
+    const isReviewMode = urlParams.get('id') !== null;
+    let isValid = true;
 
-            let isValid = true;
-            requiredFields.forEach(field => {
-                if (!field.value) {
-                    field.classList.add('is-invalid');
-                    isValid = false;
-                } else {
-                    field.classList.remove('is-invalid');
-                }
-            });
-
-            // Check signatures
-            const signatures = Object.values(signaturePads);
-            signatures.forEach(pad => {
-                const canvas = pad.canvas;
-                if (pad.isEmpty()) {
-                    canvas.style.borderColor = 'var(--danger)';
-                    isValid = false;
-                } else {
-                    canvas.style.borderColor = '';
-                }
-            });
-
-            return isValid;
+    // Helper function to manage error messages
+    function handleValidationError(element, errorMessage, errorClass = 'invalid-feedback') {
+        element.classList.add('is-invalid');
+        
+        // Look for existing error div within the parent
+        let errorDiv = element.parentNode.querySelector('.' + errorClass);
+        
+        // Create error div if it doesn't exist
+        if (!errorDiv) {
+            errorDiv = document.createElement('div');
+            errorDiv.className = errorClass;
+            // For drop zones and signatures, make sure error is visible
+            if (element.classList.contains('file-drop-zone') || 
+                element.classList.contains('signature-pad')) {
+                errorDiv.className += ' d-block';
+            }
+            element.parentNode.appendChild(errorDiv);
         }
+        
+        errorDiv.textContent = errorMessage;
+        return false;
+    }
 
+    // Helper function to clear validation errors
+    function clearValidationError(element) {
+        element.classList.remove('is-invalid');
+        const errorDiv = element.parentNode.querySelector('.invalid-feedback');
+        if (errorDiv) {
+            errorDiv.remove();
+        }
+    }
+
+    // Validate required fields
+    const requiredFields = form.querySelectorAll('[required]');
+    requiredFields.forEach(field => {
+        if (!field.value) {
+            isValid = handleValidationError(field, 'שדה חובה');
+        } else {
+            clearValidationError(field);
+        }
+    });
+
+    // Validate email format
+    const emailInput = form.querySelector('input[type="email"]');
+    if (emailInput && emailInput.value) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(emailInput.value)) {
+            isValid = handleValidationError(emailInput, 'כתובת אימייל לא תקינה');
+        }
+    }
+
+    // Validate expenses exist
+    const expenseCards = document.querySelectorAll('.expense-card');
+    if (expenseCards.length === 0) {
+        showNotification('יש להוסיף לפחות הוצאה אחת', 'warning');
+        isValid = false;
+    }
+
+    // Validate expense amounts
+    expenseCards.forEach(card => {
+        const amountInput = card.querySelector('.expense-amount');
+        if (amountInput && (isNaN(amountInput.value) || parseFloat(amountInput.value) <= 0)) {
+            isValid = handleValidationError(amountInput, 'יש להזין סכום חיובי');
+        }
+    });
+
+    // Validate file attachments
+    expenseCards.forEach(card => {
+        const filePreview = card.querySelector('.file-preview');
+        const dropZone = card.querySelector('.file-drop-zone');
+        
+        if (!filePreview || filePreview.children.length === 0) {
+            if (dropZone) {
+                dropZone.classList.add('invalid-drop-zone');
+                isValid = handleValidationError(dropZone, 'יש לצרף קבלה או אסמכתא');
+            }
+        } else {
+            if (dropZone) {
+                dropZone.classList.remove('invalid-drop-zone');
+                clearValidationError(dropZone);
+            }
+        }
+    });
+
+    // Validate signatures based on mode
+    if (isReviewMode) {
+        // Manager signature validation in review mode
+        if (signaturePads.managerSignature && signaturePads.managerSignature.isEmpty()) {
+            const canvas = signaturePads.managerSignature.canvas;
+            canvas.classList.add('invalid-signature');
+            isValid = handleValidationError(canvas, 'נדרשת חתימת מנהל');
+        }
+    } else {
+        // Employee signature validation in new submission mode
+        if (signaturePads.employeeSignature && signaturePads.employeeSignature.isEmpty()) {
+            const canvas = signaturePads.employeeSignature.canvas;
+            canvas.classList.add('invalid-signature');
+            isValid = handleValidationError(canvas, 'נדרשת חתימת עובד');
+        }
+    }
+
+    // Clear validation styling on input
+    form.addEventListener('input', function(e) {
+        if (e.target.classList.contains('is-invalid')) {
+            clearValidationError(e.target);
+        }
+    }, { once: true }); // Use once: true to prevent multiple listeners
+
+    // Clear signature validation on signing
+    Object.values(signaturePads).forEach(pad => {
+        const canvas = pad.canvas;
+        if (!canvas._hasValidationListener) { // Check if listener already exists
+            canvas._hasValidationListener = true;
+            canvas.addEventListener('mousedown', function() {
+                this.classList.remove('invalid-signature');
+                clearValidationError(this);
+            });
+        }
+    });
+
+    return isValid;
+}
+
+// Add CSS for validation styling if not already present
+if (!document.getElementById('validation-styles')) {
+    const style = document.createElement('style');
+    style.id = 'validation-styles';
+    style.textContent = `
+        .invalid-signature {
+            border: 2px solid var(--bs-danger) !important;
+        }
+        
+        .invalid-drop-zone {
+            border: 2px dashed var(--bs-danger) !important;
+        }
+        
+        .invalid-feedback {
+            display: none;
+            color: var(--bs-danger);
+            font-size: 0.875em;
+            margin-top: 0.25rem;
+        }
+        
+        .invalid-feedback.d-block {
+            display: block;
+        }
+    `;
+    document.head.appendChild(style);
+}
         async function collectExpenses() {
     const expenses = [];
     
