@@ -988,17 +988,38 @@ function getSignatureColor() {
         }
 
         async function handleFiles(files, dropZone) {
+    // Get necessary elements
+    const expenseCard = dropZone.closest('.expense-card');
+    const previewContainer = dropZone.nextElementSibling;
+    
+    // Check current file count
+    const currentFileCount = previewContainer.querySelectorAll('.file-preview-item').length;
+    
+    // Filter valid files (images and PDFs)
     const validFiles = Array.from(files).filter(file => {
         const type = file.type.toLowerCase();
         return type.startsWith('image/') || type === 'application/pdf';
     });
 
+    // Validate file types
     if (validFiles.length !== files.length) {
         showNotification('רק קבצי תמונה ו-PDF מותרים להעלאה', 'warning');
+        return;
     }
 
-    const expenseCard = dropZone.closest('.expense-card');
-    const previewContainer = dropZone.nextElementSibling;
+    // Check if adding new files would exceed the limit
+    if (currentFileCount + validFiles.length > 2) {
+        showNotification('ניתן לצרף עד 2 קבצים להוצאה', 'warning');
+        return;
+    }
+
+    // Check for file size (limit to 5MB per file)
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+    const oversizedFiles = validFiles.filter(file => file.size > MAX_FILE_SIZE);
+    if (oversizedFiles.length > 0) {
+        showNotification('גודל הקובץ חייב להיות קטן מ-5MB', 'warning');
+        return;
+    }
 
     // Check if important fields already have data
     const amountInput = expenseCard.querySelector('.expense-amount');
@@ -1013,12 +1034,11 @@ function getSignatureColor() {
                     // Create and add preview
                     const preview = document.createElement('div');
                     preview.className = 'file-preview-item';
-                    preview.innerHTML = `
-                        <img src="${e.target.result}" alt="Preview">
-                        <button type="button" class="file-remove" onclick="event.stopPropagation(); removeFile(this)">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    `;
+                    preview.innerHTML = 
+                        `<img src="${e.target.result}" alt="Preview">
+                         <button type="button" class="file-remove" onclick="event.stopPropagation(); removeFile(this)">
+                             <i class="fas fa-times"></i>
+                         </button>`;
                     
                     preview.addEventListener('click', () => {
                         openPreview(preview.querySelector('img'));
@@ -1031,10 +1051,9 @@ function getSignatureColor() {
                         // Add loading overlay
                         const loadingOverlay = document.createElement('div');
                         loadingOverlay.className = 'processing-overlay';
-                        loadingOverlay.innerHTML = `
-                            <div class="processing-spinner"></div>
-                            <div>מעבד את הקבלה...</div>
-                        `;
+                        loadingOverlay.innerHTML = 
+                            `<div class="processing-spinner"></div>
+                             <div>מעבד את הקבלה...</div>`;
                         expenseCard.style.position = 'relative';
                         expenseCard.appendChild(loadingOverlay);
 
@@ -1055,21 +1074,24 @@ function getSignatureColor() {
                         }
                     }
                 };
+
+                reader.onerror = () => {
+                    showNotification('שגיאה בקריאת הקובץ', 'danger');
+                };
+
                 reader.readAsDataURL(file);
                 
             } else if (file.type === 'application/pdf') {
-                // Create object URL for PDF files
                 const pdfUrl = URL.createObjectURL(file);
                 const pdfPreview = document.createElement('div');
                 pdfPreview.className = 'file-preview-item pdf-preview';
                 pdfPreview.dataset.pdfUrl = pdfUrl;
-                pdfPreview.innerHTML = `
-                    <i class="fas fa-file-pdf"></i>
-                    <span>${file.name}</span>
-                    <button type="button" class="file-remove" onclick="event.stopPropagation(); removeFile(this)">
-                        <i class="fas fa-times"></i>
-                    </button>
-                `;
+                pdfPreview.innerHTML = 
+                    `<i class="fas fa-file-pdf"></i>
+                     <span>${file.name}</span>
+                     <button type="button" class="file-remove" onclick="event.stopPropagation(); removeFile(this)">
+                         <i class="fas fa-times"></i>
+                     </button>`;
                 
                 pdfPreview.addEventListener('click', () => {
                     openPreview(pdfPreview);
@@ -1077,7 +1099,6 @@ function getSignatureColor() {
 
                 // Store the object URL for cleanup
                 pdfPreview.dataset.objectUrl = pdfUrl;
-                
                 previewContainer.appendChild(pdfPreview);
             }
         } catch (error) {
@@ -1086,20 +1107,72 @@ function getSignatureColor() {
         }
     }
 
-    // Hide drop zone if files were added
-    if (validFiles.length > 0) {
+    // After all files are processed, check total count and update drop zone
+    const totalFileCount = previewContainer.querySelectorAll('.file-preview-item').length;
+    
+    // Hide drop zone if 2 files are uploaded
+    if (totalFileCount >= 2) {
         dropZone.style.display = 'none';
+    } else {
+        // Update drop zone text
+        const remainingFiles = 2 - totalFileCount;
+        const textDiv = dropZone.querySelector('div:not(.text-muted)');
+        if (textDiv) {
+            if (remainingFiles === 1) {
+                textDiv.textContent = 'ניתן להוסיף עוד קובץ אחד';
+            } else {
+                textDiv.textContent = 'ניתן להוסיף עוד ' + remainingFiles + ' קבצים';
+            }
+        }
+    }
+
+    // Update validation status
+    const fileDropValidation = dropZone.classList.contains('invalid-drop-zone');
+    if (fileDropValidation && totalFileCount > 0) {
+        dropZone.classList.remove('invalid-drop-zone');
+        const errorDiv = dropZone.parentNode.querySelector('.invalid-feedback');
+        if (errorDiv) {
+            errorDiv.remove();
+        }
+    }
+
+    // Update progress bar if needed
+    if (typeof updateProgress === 'function') {
+        updateProgress();
     }
 }
+
 function removeFile(button) {
     const previewItem = button.closest('.file-preview-item, .pdf-preview');
+    const previewContainer = previewItem.parentElement;
+    const expenseCard = previewContainer.closest('.expense-card');
+    const dropZone = expenseCard.querySelector('.file-drop-zone');
     
     // Cleanup object URL if it exists
     if (previewItem.dataset.objectUrl) {
         URL.revokeObjectURL(previewItem.dataset.objectUrl);
     }
     
+    // Remove the file preview
     previewItem.remove();
+
+    // Count remaining files
+    const remainingFiles = previewContainer.querySelectorAll('.file-preview-item').length;
+
+    // Show drop zone and update text if we have less than 2 files
+    if (remainingFiles < 2) {
+        dropZone.style.display = 'block';
+        
+        // Update the drop zone text
+        const textDiv = dropZone.querySelector('div:not(.text-muted)');
+        if (textDiv) {
+            if (remainingFiles === 0) {
+                textDiv.textContent = 'גרור קבצים לכאן או לחץ להעלאה';
+            } else {
+                textDiv.textContent = 'ניתן להוסיף עוד קובץ אחד';
+            }
+        }
+    }
 }
         // Animate number changes
         function animateNumber(start, end, options) {
@@ -2056,7 +2129,229 @@ if (!document.getElementById('validation-styles')) {
     return expenses;
 }
 
+function renderPDF(pdfSource, container) {
+    // Clear any existing content
+    container.innerHTML = '';
 
+    // Create loading indicator
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.className = 'pdf-loading';
+    loadingIndicator.innerHTML = `
+        <div class="spinner">
+            <i class="fas fa-file-pdf"></i>
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">טוען PDF...</span>
+            </div>
+        </div>
+        <p>טוען מסמך PDF...</p>
+    `;
+    container.appendChild(loadingIndicator);
+
+    // Determine the source type
+    let pdfData;
+    try {
+        // Check if it's a base64 string or blob/object URL
+        if (typeof pdfSource === 'string') {
+            if (pdfSource.startsWith('data:application/pdf;base64,')) {
+                // Full data URL
+                pdfData = pdfSource;
+            } else if (pdfSource.startsWith('blob:')) {
+                // Blob URL
+                return fetchBlobPDF(pdfSource, container);
+            } else {
+                // Assume base64 without prefix
+                pdfData = `data:application/pdf;base64,${pdfSource}`;
+            }
+        } else {
+            throw new Error('Invalid PDF source');
+        }
+
+        // Create PDF viewer
+        const pdfViewerContainer = document.createElement('div');
+        pdfViewerContainer.className = 'pdf-viewer';
+        
+        // Navigation controls
+        const controls = document.createElement('div');
+        controls.className = 'pdf-controls';
+        controls.innerHTML = `
+            <button class="btn btn-outline-secondary pdf-zoom-out">
+                <i class="fas fa-search-minus"></i>
+            </button>
+            <span class="pdf-page-info">עמוד <span class="current-page">1</span> מתוך <span class="total-pages">-</span></span>
+            <button class="btn btn-outline-secondary pdf-zoom-in">
+                <i class="fas fa-search-plus"></i>
+            </button>
+        `;
+
+        // Canvas for PDF rendering
+        const canvas = document.createElement('canvas');
+        canvas.className = 'pdf-canvas';
+
+        // State variables
+        let pdfDoc = null;
+        let pageNum = 1;
+        let pageRendering = false;
+        let pageNumPending = null;
+        let scale = 1.5;
+
+        // Render page
+        function renderPage(num) {
+            pageRendering = true;
+            
+            pdfDoc.getPage(num).then((page) => {
+                const viewport = page.getViewport({ scale: scale });
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                const renderContext = {
+                    canvasContext: canvas.getContext('2d'),
+                    viewport: viewport
+                };
+
+                const renderTask = page.render(renderContext);
+                renderTask.promise.then(() => {
+                    pageRendering = false;
+                    if (pageNumPending !== null) {
+                        renderPage(pageNumPending);
+                        pageNumPending = null;
+                    }
+                    
+                    // Update page info
+                    controls.querySelector('.current-page').textContent = num;
+                    controls.querySelector('.total-pages').textContent = pdfDoc.numPages;
+                });
+            });
+        }
+
+        // Queue page render
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
+            } else {
+                renderPage(num);
+            }
+        }
+
+        // Page navigation
+        controls.querySelector('.pdf-zoom-in').addEventListener('click', () => {
+            scale += 0.25;
+            queueRenderPage(pageNum);
+        });
+
+        controls.querySelector('.pdf-zoom-out').addEventListener('click', () => {
+            scale = Math.max(0.5, scale - 0.25);
+            queueRenderPage(pageNum);
+        });
+
+        // Load PDF
+        pdfjsLib.getDocument(pdfData).promise.then((pdf) => {
+            pdfDoc = pdf;
+            loadingIndicator.remove();
+            
+            // Add controls and canvas
+            pdfViewerContainer.appendChild(controls);
+            pdfViewerContainer.appendChild(canvas);
+            container.appendChild(pdfViewerContainer);
+
+            // Render first page
+            renderPage(1);
+        }).catch((error) => {
+            console.error('PDF Load Error:', error);
+            loadingIndicator.innerHTML = `
+                <div class="text-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    שגיאה בטעינת PDF
+                </div>
+            `;
+        });
+
+    } catch (error) {
+        console.error('PDF Render Error:', error);
+        container.innerHTML = `
+            <div class="text-danger">
+                <i class="fas fa-exclamation-triangle"></i>
+                שגיאה בהצגת PDF: ${error.message}
+            </div>
+        `;
+    }
+}
+
+// Helper function to fetch blob PDFs
+function fetchBlobPDF(blobUrl, container) {
+    fetch(blobUrl)
+        .then(response => response.blob())
+        .then(blob => {
+            const reader = new FileReader();
+            reader.onloadend = function() {
+                renderPDF(reader.result, container);
+            }
+            reader.readAsDataURL(blob);
+        })
+        .catch(error => {
+            console.error('Blob PDF Fetch Error:', error);
+            container.innerHTML = `
+                <div class="text-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    שגיאה בטעינת PDF: ${error.message}
+                </div>
+            `;
+        });
+}
+
+// Add styles for PDF preview
+const pdfStyles = document.createElement('style');
+pdfStyles.textContent = `
+    .pdf-viewer {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        max-width: 100%;
+        overflow-x: auto;
+    }
+    
+    .pdf-controls {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        margin-bottom: 10px;
+        padding: 0 10px;
+    }
+    
+    .pdf-canvas {
+        max-width: 100%;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .pdf-loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 200px;
+        text-align: center;
+    }
+    
+    .pdf-loading .spinner {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .pdf-loading .spinner-border {
+        position: absolute;
+        width: 50px;
+        height: 50px;
+    }
+    
+    .pdf-loading .fa-file-pdf {
+        font-size: 48px;
+        color: #dc3545;
+        z-index: 1;
+    }
+`;
+document.head.appendChild(pdfStyles);
 
 
         // Function to hide loading overlay
