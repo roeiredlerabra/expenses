@@ -676,29 +676,38 @@ function setupManagerReviewMode(data) {
     
     img.src = 'data:image/png;base64,' + base64Data;
 }
+
+
 function initSignaturePad(elementId) {
     const canvas = document.getElementById(elementId);
     
-    // Function to properly resize canvas
+    // Function to properly resize canvas with DPR handling
     function resizeCanvas() {
         const rect = canvas.getBoundingClientRect();
-        const dpr = window.devicePixelRatio || 1;
+        const dpr = 1;
         
-        // Set canvas size accounting for device pixel ratio
+        // Set canvas size accounting for DPR
         canvas.width = rect.width * dpr;
         canvas.height = rect.height * dpr;
         
-        // Scale the context to ensure correct drawing
+        // Scale context to match DPR
         const ctx = canvas.getContext('2d');
         ctx.scale(dpr, dpr);
         
-
+        // Set CSS size explicitly
+        //canvas.style.width = `${rect.width}px`;
+        canvas.style.height = `${rect.height}px`;
     }
     
-    // Initial resize
-    resizeCanvas();
+    // Force an initial reflow to ensure correct dimensions
+    canvas.style.display = 'none';
+    canvas.offsetHeight; // Trigger reflow
+    canvas.style.display = 'block';
     
-    // Configure pad with proper coordinate transformation
+    // Initial resize with a small delay to ensure layout is complete
+    setTimeout(resizeCanvas, 0);
+    
+    // Configure pad with coordinate transformation
     const pad = new SignaturePad(canvas, {
         penColor: getSignatureColor(),
         backgroundColor: 'transparent',
@@ -710,34 +719,37 @@ function initSignaturePad(elementId) {
         dotSize: 1.5
     });
 
-    // Override the _handleMouseEvents and _handleTouchEvents methods to fix coordinate mapping
+    // Override the _handleMouseEvents method to fix coordinate mapping
     const originalMouseEvents = pad._handleMouseEvents;
-    const originalTouchEvents = pad._handleTouchEvents;
-
     pad._handleMouseEvents = function() {
         originalMouseEvents.call(this);
+        
         this._canvas.addEventListener("mousedown", function(event) {
             const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            event._x = (event.clientX - rect.left) * scaleX;
-            event._y = (event.clientY - rect.top) * scaleY;
+            const x = (event.clientX - rect.left);
+            const y = (event.clientY - rect.top);
+            event._x = x;
+            event._y = y;
         }, false);
     };
 
+    // Override the _handleTouchEvents method to fix coordinate mapping
+    const originalTouchEvents = pad._handleTouchEvents;
     pad._handleTouchEvents = function() {
         originalTouchEvents.call(this);
+        
         this._canvas.addEventListener("touchstart", function(event) {
             const rect = canvas.getBoundingClientRect();
             const touch = event.changedTouches[0];
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            event._x = (touch.clientX - rect.left) * scaleX;
-            event._y = (touch.clientY - rect.top) * scaleY;
+            const x = (touch.clientX - rect.left);
+            const y = (touch.clientY - rect.top);
+            event._x = x;
+            event._y = y;
         }, false);
     };
 
-    // Handle window resize
+    // Handle window resize with debounce
+    let resizeTimeout;
     const handleResize = () => {
         const data = pad.toData();
         resizeCanvas();
@@ -748,16 +760,26 @@ function initSignaturePad(elementId) {
         }
     };
 
-    // Add resize event listener with debounce
-    let resizeTimeout;
+    // Ensure canvas is properly sized when tab becomes visible
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            handleResize();
+        }
+    });
+
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(handleResize, 100);
     });
 
+    // Force a resize after a short delay to ensure everything is properly initialized
+    setTimeout(handleResize, 100);
+
     return pad;
 }
-        function getSignatureColor() {
+
+
+function getSignatureColor() {
             const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
             return isDarkMode ? '#ffffff' : '#121f3f'; // White for dark mode, Abra navy for light mode
         }
