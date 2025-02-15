@@ -1586,73 +1586,193 @@ async function handleNewSubmission(e) {
     ];
 
     const overlay = document.createElement('div');
-    overlay.className = 'fixed-top vh-100 vw-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50 backdrop-blur';
+    overlay.className = 'loading-overlay';
 
     const content = document.createElement('div');
-    content.className = 'card shadow-lg border-0 mx-3';
-    content.style.maxWidth = '450px';
+    content.className = 'loading-content';
     
     content.innerHTML = `
-        <div class="card-body p-4">
-            <div class="text-center mb-4">
-                <div class="spinner-border text-primary mb-3" role="status">
-                    <span class="visually-hidden">טוען...</span>
-                </div>
-                <h5 class="mb-0 text-body">${initialMessage}</h5>
-            </div>
-            <div class="stages-container">
-                ${stages.map((stage, index) => `
-                    <div class="stage-item mb-3" data-stage="${stage.id}">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="stage-icon">
-                                <i class="fas fa-${stage.icon} text-muted"></i>
+        <div class="loading-header">
+            <div class="pulse-loader"></div>
+            <h5>${initialMessage}</h5>
+        </div>
+        <div class="stages-container">
+            ${stages.map((stage) => `
+                <div class="stage-item" data-stage="${stage.id}">
+                    <div class="stage-content">
+                        <div class="stage-icon">
+                            <i class="fas fa-${stage.icon}"></i>
+                        </div>
+                        <div class="stage-details">
+                            <div class="stage-header">
+                                <span class="stage-label">${stage.label}</span>
+                                <div class="stage-meta">
+                                    <span class="stage-duration">0ms</span>
+                                    <span class="stage-status-dot"></span>
+                                </div>
                             </div>
-                            <div class="flex-grow-1">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="stage-label fw-medium">${stage.label}</span>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="stage-duration text-muted small">0ms</span>
-                                        <span class="stage-status">
-                                            <i class="fas fa-circle fs-6 text-muted opacity-50"></i>
-                                        </span>
-                                    </div>
-                                </div>
-                                <div class="progress rounded-pill" style="height: 6px;">
-                                    <div class="progress-bar bg-primary rounded-pill" 
-                                         role="progressbar" 
-                                         style="width: 0%" 
-                                         aria-valuenow="0" 
-                                         aria-valuemin="0" 
-                                         aria-valuemax="100">
-                                    </div>
-                                </div>
+                            <div class="stage-progress">
+                                <div class="progress-bar" role="progressbar"></div>
                             </div>
                         </div>
                     </div>
-                `).join('')}
-            </div>
+                </div>
+            `).join('')}
         </div>
     `;
 
-    // Add some additional class styling
     const style = document.createElement('style');
     style.textContent = `
-        .backdrop-blur {
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
         }
+
+        .loading-content {
+            background: var(--bs-body-bg);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 400px;
+            padding: 2rem;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .loading-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .pulse-loader {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--bs-primary);
+            border-radius: 50%;
+            margin: 0 auto 1rem;
+            position: relative;
+            animation: pulse 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
         .stage-item {
-            transition: opacity 0.3s ease;
+            margin-bottom: 1.5rem;
+            opacity: 0.7;
+            transition: all 0.3s ease;
         }
-        .stage-item.completed .stage-icon i {
-            color: var(--bs-success) !important;
+
+        .stage-item.active {
+            opacity: 1;
         }
+
+        .stage-content {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .stage-icon {
+            background: var(--bs-gray-100);
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .stage-item.completed .stage-icon {
+            background: var(--bs-success);
+            color: white;
+        }
+
+        .stage-details {
+            flex: 1;
+        }
+
+        .stage-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .stage-label {
+            font-weight: 500;
+            color: var(--bs-body-color);
+        }
+
+        .stage-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--bs-gray-600);
+        }
+
+        .stage-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--bs-gray-400);
+            transition: all 0.3s ease;
+        }
+
+        .stage-item.completed .stage-status-dot {
+            background: var(--bs-success);
+        }
+
+        .stage-progress {
+            height: 4px;
+            background: var(--bs-gray-200);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
         .progress-bar {
+            height: 100%;
+            background: var(--bs-primary);
+            width: 0;
             transition: width 0.3s ease;
         }
-    `;
-    document.head.appendChild(style);
 
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(var(--bs-primary-rgb), 0.7);
+            }
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 10px rgba(var(--bs-primary-rgb), 0);
+            }
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(var(--bs-primary-rgb), 0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
     overlay.appendChild(content);
     document.body.appendChild(overlay);
 
@@ -1661,14 +1781,27 @@ async function handleNewSubmission(e) {
             const stageElement = overlay.querySelector(`[data-stage="${stageId}"]`);
             if (!stageElement) return;
 
+            // Update progress bar
             const progressBar = stageElement.querySelector('.progress-bar');
             if (progressBar) {
                 progressBar.style.width = `${progress}%`;
-                progressBar.setAttribute('aria-valuenow', progress);
             }
-        },
-        getStageElement: (stageId) => {
-            return overlay.querySelector(`[data-stage="${stageId}"]`);
+
+            // Mark as active
+            stageElement.classList.add('active');
+
+            // Mark as completed if 100%
+            if (progress === 100) {
+                stageElement.classList.add('completed');
+                
+                // Animate to next stage
+                const nextStage = stageElement.nextElementSibling;
+                if (nextStage) {
+                    setTimeout(() => {
+                        nextStage.classList.add('active');
+                    }, 300);
+                }
+            }
         },
         setMessage: (message) => {
             const messageElement = content.querySelector('h5');
@@ -1677,11 +1810,14 @@ async function handleNewSubmission(e) {
             }
         },
         close: () => {
-            overlay.remove();
-            style.remove();
+            overlay.style.opacity = '0';
+            setTimeout(() => {
+                overlay.remove();
+                style.remove();
+            }, 300);
         }
     };
-}   
+}
         function removeExistingOverlays() {
             const existingOverlays = document.querySelectorAll('.loading-overlay');
             existingOverlays.forEach(overlay => overlay.remove());
