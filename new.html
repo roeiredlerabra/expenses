@@ -372,7 +372,7 @@ function populateExpenseReport(data) {
         const dateInput = card.querySelector('input[type="date"]');
         const invoiceInput = card.querySelector('input[placeholder="הזן מספר חשבונית"]');
         const amountInput = card.querySelector('.expense-amount');
-        
+        const notesInput = card.querySelector('#note');
         if (dateInput) {
             dateInput.value = expenseDate;
             dateInput.readOnly = true;
@@ -386,6 +386,10 @@ function populateExpenseReport(data) {
             amountInput.value = amount;
             amountInput.readOnly = true;
             totalAmount += amount; // Add to running total
+        }
+                if (notesInput) {
+            notesInput.value = item.notes || ''; // Populate notes field
+            notesInput.readOnly = true; // Make readonly in review mode
         }
     });
 
@@ -888,85 +892,88 @@ function getSignatureColor() {
             pad.addEventListener('endStroke', updateProgress);
         });
         function quickAdd(type) {
-            const container = document.getElementById('expensesContainer');
-            const today = new Date().toISOString().split('T')[0];
+    const container = document.getElementById('expensesContainer');
+    const today = new Date().toISOString().split('T')[0];
 
-            const card = document.createElement('div');
-            card.className = 'expense-card animate__animated animate__fadeIn';
+    const card = document.createElement('div');
+    card.className = 'expense-card animate__animated animate__fadeIn';
 
-            let typeLabel, typeIcon, typeClass;
-            switch (type) {
-                case 'fuel':
-                    typeLabel = 'דלק';
-                    typeIcon = 'gas-pump';
-                    typeClass = 'fuel';
-                    break;
-                case 'parking':
-                    typeLabel = 'חניה';
-                    typeIcon = 'parking';
-                    typeClass = 'parking';
-                    break;
-                case 'other':
-                    typeLabel = 'הוצאה אחרת';
-                    typeIcon = 'receipt';
-                    typeClass = 'other';
-                    break;
-            }
+    let typeLabel, typeIcon, typeClass;
+    switch (type) {
+        case 'fuel':
+            typeLabel = 'דלק';
+            typeIcon = 'gas-pump';
+            typeClass = 'fuel';
+            break;
+        case 'parking':
+            typeLabel = 'חניה';
+            typeIcon = 'parking';
+            typeClass = 'parking';
+            break;
+        case 'other':
+            typeLabel = 'הוצאה אחרת';
+            typeIcon = 'receipt';
+            typeClass = 'other';
+            break;
+    }
 
-            card.innerHTML = `
-                <div class="expense-type-indicator expense-type-${typeClass}">
-                    <i class="fas fa-${typeIcon}"></i>
-                    ${typeLabel}
+    card.innerHTML = `
+        <div class="expense-type-indicator expense-type-${typeClass}">
+            <i class="fas fa-${typeIcon}"></i>
+            ${typeLabel}
+        </div>
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">תאריך</label>
+                <input type="date" class="form-control" value="${today}" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">מספר חשבונית</label>
+                <input type="text" class="form-control" placeholder="הזן מספר חשבונית" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">סכום</label>
+                <div class="input-group">
+                    <input type="number" step="0.01" class="form-control expense-amount" required>
+                    <span class="input-group-text">₪</span>
                 </div>
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <label class="form-label">תאריך</label>
-                        <input type="date" class="form-control" value="${today}" required>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">מספר חשבונית</label>
-                        <input type="text" class="form-control" placeholder="הזן מספר חשבונית" required>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">סכום</label>
-                        <div class="input-group">
-                            <input type="number" step="0.01" class="form-control expense-amount" required>
-                            <span class="input-group-text">₪</span>
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <button type="button" class="btn btn-outline-danger w-100" onclick="removeExpenseRow(this)">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                    <div class="col-12">
-                        <div class="file-drop-zone" ondrop="handleFileDrop(event, this)" 
-                             ondragover="handleDragOver(event)" 
-                             ondragleave="handleDragLeave(event)">
-                            <i class="fas fa-cloud-upload-alt mb-2" style="font-size: 2rem;"
-       data-bs-toggle="tooltip"
-       data-bs-placement="top"
-       title="צלם את הקבלה באמצעות הטלפון או גרור לכאן קובץ PDF"></i>
-                            <div>גרור קבצים לכאן או לחץ להעלאה</div>
-                            <div class="text-muted">(תמונות או PDF בלבד)</div>
-                            <input type="file" class="d-none" accept="image/*,.pdf" multiple 
-                                   onchange="handleFileSelect(event, this.parentElement)">
-                        </div>
-                        <div class="file-preview"></div>
-                    </div>
+            </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-outline-danger w-100" onclick="removeExpenseRow(this)">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            <div class="col-md-12">
+                <label class="form-label">הערות נוספות</label>
+                <textarea class="form-control" id="note" rows="2" placeholder="הוסף הערות או פרטים נוספים לגבי ההוצאה (לא חובה)"></textarea>
+            </div>
+            <div class="col-12">
+                <div class="file-drop-zone" ondrop="handleFileDrop(event, this)" 
+                     ondragover="handleDragOver(event)" 
+                     ondragleave="handleDragLeave(event)">
+                    <i class="fas fa-cloud-upload-alt mb-2" style="font-size: 2rem;"
+   data-bs-toggle="tooltip"
+   data-bs-placement="top"
+   title="צלם את הקבלה באמצעות הטלפון או גרור לכאן קובץ PDF"></i>
+                    <div>גרור קבצים לכאן או לחץ להעלאה</div>
+                    <div class="text-muted">(תמונות או PDF בלבד)</div>
+                    <input type="file" class="d-none" accept="image/*,.pdf" multiple 
+                           onchange="handleFileSelect(event, this.parentElement)">
                 </div>
-            `;
+                <div class="file-preview"></div>
+            </div>
+        </div>
+    `;
 
-            container.insertBefore(card, container.firstChild);
-            updateTotal();
+    container.insertBefore(card, container.firstChild);
+    updateTotal();
 
-            // Add click handler for file upload zone
-            const dropZone = card.querySelector('.file-drop-zone');
-            dropZone.addEventListener('click', () => {
-                dropZone.querySelector('input[type="file"]').click();
-            });
-        }
-
+    // Add click handler for file upload zone
+    const dropZone = card.querySelector('.file-drop-zone');
+    dropZone.addEventListener('click', () => {
+        dropZone.querySelector('input[type="file"]').click();
+    });
+}
         // New functions for file handling
         function handleDragOver(event) {
             event.preventDefault();
@@ -2093,7 +2100,7 @@ if (!document.getElementById('validation-styles')) {
     `;
     document.head.appendChild(style);
 }
-        async function collectExpenses() {
+async function collectExpenses() {
     const expenses = [];
     
     // Helper function to convert blob URL to base64
@@ -2165,6 +2172,7 @@ if (!document.getElementById('validation-styles')) {
             date: card.querySelector('input[type="date"]').value,
             invoice: card.querySelector('input[placeholder="הזן מספר חשבונית"]').value,
             amount: parseFloat(card.querySelector('.expense-amount').value) || 0,
+            notes: card.querySelector('#note').value || '', // Get notes field value
             files: files
         });
     }
