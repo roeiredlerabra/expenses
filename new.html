@@ -2033,6 +2033,20 @@ async function handleNewSubmission(e) {
 
     // Validate file attachments
     expenseCards.forEach(card => {
+        // Check if this is a route expense type (which doesn't require attachments)
+        const isRouteExpense = card.querySelector('.expense-type-route') !== null;
+        
+        // Skip attachment validation for route expenses
+        if (isRouteExpense) {
+            // If there's a dropzone that's marked as invalid, fix it
+            const dropZone = card.querySelector('.file-drop-zone');
+            if (dropZone && dropZone.classList.contains('invalid-drop-zone')) {
+                dropZone.classList.remove('invalid-drop-zone');
+                clearValidationError(dropZone);
+            }
+            return; // Continue to next card
+        }
+        
         const filePreview = card.querySelector('.file-preview');
         const dropZone = card.querySelector('.file-drop-zone');
         
