@@ -509,7 +509,10 @@ h6 {
     background-color: var(--coral-light);
     color: var(--abra-coral);
 }
-
+.expense-type-route {
+    background-color: var(--coral-light);
+    color: var(--abra-navy);
+}
 .expense-type-parking {
     background-color: var(--pink-light);
     color: var(--abra-pink);
@@ -867,6 +870,10 @@ box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 [data-theme="dark"] .expense-type-fuel {
     background-color: rgba(255, 119, 72, 0.2);
     color: var(--abra-coral);
+}
+[data-theme="dark"] .expense-type-route {
+    background-color: rgba(255, 119, 72, 0.2);
+    color: var(--abra-white);
 }
 
 [data-theme="dark"] .expense-type-parking {

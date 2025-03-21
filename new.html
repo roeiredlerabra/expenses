@@ -72,27 +72,33 @@
                 </div>
             </div>
 
-            <!-- Quick Add Bar -->
-            <div class="quick-add-bar">
-                <div class="d-flex gap-3 flex-wrap">
-                    <button type="button" class="quick-add-button" onclick="quickAdd('fuel')" data-bs-toggle="tooltip"
-                        data-bs-placement="top" title="הוסף הוצאת דלק - צרף תמונת קבלה לזיהוי אוטומטי של הפרטים">
-                        <i class="fas fa-gas-pump"></i>
-                        דלק
-                    </button>
-                    <button type="button" class="quick-add-button" onclick="quickAdd('parking')"
-                        data-bs-toggle="tooltip" data-bs-placement="top"
-                        title="הוסף הוצאת חניה - צרף קבלה או אישור תשלום">
-                        <i class="fas fa-parking"></i>
-                        חניה
-                    </button>
-                    <button type="button" class="quick-add-button" onclick="quickAdd('other')" data-bs-toggle="tooltip"
-                        data-bs-placement="top" title="הוסף הוצאה אחרת - למשל: נסיעות, ציוד, או הוצאות משרדיות">
-                        <i class="fas fa-receipt"></i>
-                        הוצאה אחרת
-                    </button>
-                </div>
-            </div>
+<!-- Quick Add Bar -->
+<div class="quick-add-bar">
+    <div class="d-flex gap-3 flex-wrap">
+        <button type="button" class="quick-add-button" onclick="quickAdd('fuel')" data-bs-toggle="tooltip"
+            data-bs-placement="top" title="הוסף הוצאת רכב - צרף תמונת קבלה לזיהוי אוטומטי של הפרטים">
+            <i class="fas fa-gas-pump"></i>
+            רכב
+        </button>
+        <button type="button" class="quick-add-button" onclick="quickAdd('route')" data-bs-toggle="tooltip"
+            data-bs-placement="top" title="הוסף החזר קילומטרים">
+            <i class="fas fa-route"></i>
+            נסיעה
+        </button>
+        <button type="button" class="quick-add-button" onclick="quickAdd('parking')"
+            data-bs-toggle="tooltip" data-bs-placement="top"
+            title="הוסף הוצאת חניה - צרף קבלה או אישור תשלום">
+            <i class="fas fa-parking"></i>
+            חניה
+        </button>
+        <button type="button" class="quick-add-button" onclick="quickAdd('other')" data-bs-toggle="tooltip"
+            data-bs-placement="top" title="הוסף הוצאה אחרת - למשל: נסיעות, ציוד, או הוצאות משרדיות">
+            <i class="fas fa-receipt"></i>
+            הוצאה אחרת
+        </button>
+    </div>
+</div>
+
 
             <!-- Expenses Container -->
             <div id="expensesContainer"></div>
@@ -351,11 +357,14 @@ function populateExpenseReport(data) {
     // Add expense items
     data.expense_items.forEach(item => {
         let expenseType = 'other';
-        if (item.ExpenseType.toLowerCase().includes('דלק')) {
-            expenseType = 'fuel';
-        } else if (item.ExpenseType.toLowerCase().includes('חניה')) {
-            expenseType = 'parking';
-        }
+    if (item.ExpenseType.toLowerCase().includes('רכב')) {
+        expenseType = 'fuel';
+    } else if (item.ExpenseType.toLowerCase().includes('חניה')) {
+        expenseType = 'parking';
+    } else if (item.ExpenseType.toLowerCase().includes('נסיעה')) {
+        expenseType = 'route';
+    }
+        
 
         quickAdd(expenseType);
         const card = container.firstElementChild;
@@ -899,23 +908,28 @@ function getSignatureColor() {
     card.className = 'expense-card animate__animated animate__fadeIn';
 
     let typeLabel, typeIcon, typeClass;
-    switch (type) {
-        case 'fuel':
-            typeLabel = 'דלק';
-            typeIcon = 'gas-pump';
-            typeClass = 'fuel';
-            break;
-        case 'parking':
-            typeLabel = 'חניה';
-            typeIcon = 'parking';
-            typeClass = 'parking';
-            break;
-        case 'other':
-            typeLabel = 'הוצאה אחרת';
-            typeIcon = 'receipt';
-            typeClass = 'other';
-            break;
-    }
+switch (type) {
+    case 'fuel':
+        typeLabel = 'רכב';
+        typeIcon = 'gas-pump';
+        typeClass = 'fuel';
+        break;
+    case 'parking':
+        typeLabel = 'חניה';
+        typeIcon = 'parking';
+        typeClass = 'parking';
+        break;
+    case 'route': // הוספת מקרה לנסיעה
+        typeLabel = 'נסיעה';
+        typeIcon = 'route';
+        typeClass = 'route';
+        break;
+    case 'other':
+        typeLabel = 'הוצאה אחרת';
+        typeIcon = 'receipt';
+        typeClass = 'other';
+        break;
+}
 
     card.innerHTML = `
         <div class="expense-type-indicator expense-type-${typeClass}">
