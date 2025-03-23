@@ -2957,7 +2957,63 @@ setupTotalClickHandlers(floatingTotal) {
       });
     }
   };
+  ValidationManager.validateAbraEmail = function(email) {
+  // Check if email contains "@abra" in any form
+  return email.toLowerCase().includes('@abra');
+};
+
+// Extend the validateForm function in the FormHandler module to include this validation
+const originalValidateForm = FormHandler.validateForm;
+FormHandler.validateForm = function() {
+  // Run the original validation first
+  const isValid = originalValidateForm.call(this);
   
+  // If the basic validation failed, no need to continue
+  if (!isValid) return false;
+  
+  // Now check for Abra domain validation
+  const employeeEmail = document.querySelector('input[name="employeeEmail"]').value;
+  const managerEmail = document.querySelector('input[name="managerEmail"]').value;
+  
+  // Check employee email
+  if (employeeEmail && !ValidationManager.validateAbraEmail(employeeEmail)) {
+    Swal.fire({
+      title: 'שגיאת אימות',
+      text: 'כתובת האימייל של העובד חייבת להיות עם דומיין Abra',
+      icon: 'error',
+      confirmButtonText: 'אישור',
+      showCloseButton: true,
+      rtl: true
+    });
+    
+    ValidationManager.handleValidationError(
+      document.querySelector('input[name="employeeEmail"]'),
+      'כתובת האימייל חייבת להכיל @abra'
+    );
+    return false;
+  }
+  
+  // Check manager email
+  if (managerEmail && !ValidationManager.validateAbraEmail(managerEmail)) {
+    Swal.fire({
+      title: 'שגיאת אימות',
+      text: 'כתובת האימייל של המנהל חייבת להיות עם דומיין Abra',
+      icon: 'error',
+      confirmButtonText: 'אישור',
+      showCloseButton: true,
+      rtl: true
+    });
+    
+    ValidationManager.handleValidationError(
+      document.querySelector('input[name="managerEmail"]'),
+      'כתובת האימייל חייבת להכיל @abra'
+    );
+    return false;
+  }
+  
+  // All validations passed
+  return true;
+};
   // ============= PDF RENDERER MODULE =============
   const PdfRenderer = {
     init() {
@@ -3579,6 +3635,18 @@ setupTotalClickHandlers(floatingTotal) {
     window.UIManager = UIManager;
     window.closePreview = UIManager.closePreview.bind(UIManager);
     window.clearSignature = SignatureManager.clearSignature.bind(SignatureManager);
+    const emailFields = document.querySelectorAll('input[type="email"]');
+  
+  emailFields.forEach(field => {
+    field.addEventListener('blur', function() {
+      if (this.value && !ValidationManager.validateAbraEmail(this.value)) {
+        ValidationManager.handleValidationError(
+          this,
+          'כתובת האימייל חייבת להכיל @abra'
+        );
+      }
+    });
+  });
   });
 
 })();
