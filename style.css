@@ -1249,3 +1249,108 @@ box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     flex-direction: column;
     padding: 0;
 }
+.calendar-container {
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    max-width: 350px;
+    margin: 0 auto;
+  }
+  .day-cell {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    user-select: none;
+    position: relative;
+    margin: 2px auto;
+  }
+  .day-cell.today::after {
+    content: '';
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    background-color: #fff;
+    border-radius: 50%;
+    bottom: 2px;
+  }
+  .day-cell:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+  }
+  .weekday-header {
+    color: #475569;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-left: 8px;
+    display: inline-block;
+  }
+  .alert-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  .month-header {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+  }
+  /* טיפי סטיילינג */
+  .tippy-box {
+    background-color: #1e293b;
+    color: white;
+    border-radius: 8px;
+    font-size: 14px;
+    padding: 5px;
+    text-align: center;
+  }
+  .tippy-arrow {
+    color: #1e293b;
+  }
+  /* שיפור נראות אייקונים */
+  .icon-indicator {
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+  }
+  /* סגנון פס התקדמות */
+  .auto-close-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background-color: #e2e8f0;
+    overflow: hidden;
+    border-radius: 0 0 0.75rem 0.75rem;
+  }
+  .auto-close-progress-bar {
+    height: 100%;
+    width: 100%;
+    background-color: #4f46e5;
+    animation: shrink 25s linear forwards;
+  }
+  @keyframes shrink {
+    0% { width: 100%; }
+    100% { width: 0%; }
+  }

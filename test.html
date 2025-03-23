@@ -5,6 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>דוח החזר הוצאות | Abra</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.3.0/build/global/luxon.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tippy.js@6.3.7/dist/tippy.umd.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.rtl.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -14,6 +20,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <script src="pdf.js"></script>
     <style>
 
@@ -3647,9 +3654,186 @@ FormHandler.validateForm = function() {
       }
     });
   });
+  checkAndShowAlert();
   });
 
 })();
+</script>
+<script>
+// Add these functions to your JavaScript file, either at the end of your main script or in a separate <script> tag
+
+    function generateMiniCalendar() {
+  const DateTime = luxon.DateTime;
+  
+  const today = DateTime.now();
+
+  const currentDay = today.day;
+  const { daysInMonth } = today;
+  const firstDay = today.startOf('month');
+  // תיקון החישוב - אנחנו רוצים שיום א' יהיה בעמודה הראשונה
+  // ב-Luxon יום א' הוא 7 ויום ב' הוא 1, לכן נעשה התאמה
+  let firstDayOfMonth = firstDay.weekday;
+  if (firstDayOfMonth === 7) { // אם זה יום ראשון
+    firstDayOfMonth = 1;
+  } else {
+    firstDayOfMonth += 1; // להזיז את כל שאר הימים
+  }
+  
+  const monthName = today.toFormat('MMMM yyyy');
+  
+  let html = `<div class="calendar-container">
+                <div class="month-header">
+                  <i data-lucide="calendar-days" class="w-6 h-6 ml-2 text-indigo-600 icon-indicator"></i>
+                  ${monthName}
+                </div>
+                <div class="grid grid-cols-7 gap-1 text-center">`;
+  
+  // ימי השבוע - סדר ישראלי: א' בעמודה הראשונה
+  ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'].forEach(day => {
+    html += `<div class="weekday-header">${day}</div>`;
+  });
+  
+  // רווחים בתחילת השורה
+  for (let i = 1; i < firstDayOfMonth; i++) {
+    html += "<div></div>";
+  }
+  
+  // ימי החודש
+  for (let day = 1; day <= daysInMonth; day++) {
+    let classes = "day-cell cursor-pointer ";
+    let tooltipText = "";
+    
+    if (day <= 25) {
+      classes += "bg-green-600 hover:bg-green-700 text-white";
+      tooltipText = "החזר הוצאות יכנס למשכורת עבור החודש הנוכחי";
+    } else {
+      classes += "bg-orange-500 hover:bg-orange-600 text-white";
+      tooltipText = "החזר הוצאות ייכנס למשכורת החודש הבא";
+    }
+    
+    // הוספת סימון מיוחד ליום הנוכחי וליום 25
+    const isCurrent = day === currentDay;
+    const isDeadline = day === 25;
+    
+    if (isDeadline) {
+      classes += " ring-2 ring-red-500 ring-offset-2";
+      tooltipText = "תאריך אחרון להגשת דו״ח להחזר בחודש הנוכחי!";
+    } else if (isCurrent && !isDeadline) {
+      classes += " today ring-2 ring-blue-500 ring-offset-1";
+      if (day <= 25) {
+        tooltipText = "היום! החזר הוצאות יכנס למשכורת עבור החודש הנוכחי";
+      } else {
+        tooltipText = "היום! החזר הוצאות יכנס למשכורת בחודש הבא";
+      }
+    }
+    
+    let dayContent = day;
+    if (isDeadline) {
+      dayContent = `<span class="relative">${day}
+                     <i data-lucide="bookmark" class="w-3 h-3 absolute -top-1 -right-1 text-white icon-indicator"></i>
+                   </span>`;
+    }
+    
+    html += `<div class="${classes}" data-tippy-content="${tooltipText}">${dayContent}</div>`;
+  }
+  
+  html += `</div>`;
+  
+  // מקרא משופר
+  html += `<div class="mt-5 text-sm text-slate-700 bg-gray-50 p-3 rounded-lg shadow-sm border border-gray-100">
+            <div class="legend-item">
+                <svg class="w-4 h-4 text-green-600 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="12" r="10" />
+                </svg>
+                <span class="font-medium text-green-600">עד ה-25:</span> 
+                <span class="text-gray-700">החזר הוצאות במשכורת החודש</span>
+            </div>
+            <div class="legend-item">
+                <svg class="w-4 h-4 text-orange-500 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="12" r="10" />
+                </svg>
+                <span class="font-medium text-orange-500">אחרי ה-25:</span> 
+                <span class="text-gray-700">החזר הוצאות במשכורת הבאה</span>
+            </div>
+            <div class="legend-item">
+                <svg class="w-4 h-4 text-red-500 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="12" r="10" />
+                </svg>
+                <span class="font-medium text-red-600">25 לחודש:</span> 
+                <span class="text-gray-700">תאריך אחרון להגשת החזר הוצאות במשכורת החודש</span>
+            </div>
+
+           </div>`;
+  
+  html += `</div>`;
+  return html;
+}
+
+function showAlert() {
+  const today = luxon.DateTime.now();
+  // תוצג התראה אם היום הוא בין 20 ליום האחרון של החודש (כולל)
+  if (today.day >= 20) {
+    const extraMsg = `<div class="mb-5 mx-auto max-w-md">
+                        <div class="flex items-center gap-2 text-red-600 font-bold mb-3 justify-center">
+                          <i data-lucide="bell-ring" class="w-6 h-6 icon-indicator"></i>
+                          דו"ח שמוגש לאחר ה-25 החזר ההוצאות ייכנס למשכורת בחודש שלאחריו
+                        </div>
+                      </div>`;
+    
+    // הוספת פס התקדמות לסגירה אוטומטית
+    const progressBar = `<div class="auto-close-progress">
+                          <div class="auto-close-progress-bar"></div>
+                        </div>`;
+    
+    // הגדרת התראה עם טיימר 10 שניות
+    const alertInstance = Swal.fire({
+      title: '<div class="alert-title">תזכורת חשובה</div>',
+      icon: "",
+      html: extraMsg + generateMiniCalendar() + progressBar,
+      showCloseButton: true,
+      showCancelButton: false,
+      focusConfirm: false,
+      width: 'auto',
+      confirmButtonText: '<div class="flex items-center gap-2"><i data-lucide="check-circle" class="w-5 h-5"></i>הבנתי</div>',
+      confirmButtonColor: '#4f46e5',
+      cancelButtonText: '<div class="flex items-center gap-2"><i data-lucide="x" class="w-5 h-5"></i>סגור</div>',
+      cancelButtonColor: '#64748b',
+      customClass: {
+        container: 'swal-rtl',
+        popup: 'rounded-xl'
+      },
+      didOpen: () => {
+        lucide.createIcons();
+        // הפעלת טיפים על כל תאי הימים
+        tippy('[data-tippy-content]', {
+          placement: 'top',
+          arrow: true,
+          delay: [100, 0],
+          duration: [200, 200],
+          theme: 'custom'
+        });
+        
+        // סגירה אוטומטית לאחר 15 שניות
+        setTimeout(() => {
+          Swal.close();
+        }, 25000);
+      }
+    });
+  }
+}
+
+function checkAndShowAlert() {
+  const today = luxon.DateTime.now();
+  // אם היום הוא בין 20 ליום האחרון של החודש
+  if (today.day >= 20 && today.day <= today.daysInMonth) {
+    showAlert();
+  }
+}
+
+// Initialize Lucide icons after the page loads
+document.addEventListener('DOMContentLoaded', function() {
+  lucide.createIcons();
+});
 </script>
     <div id="filePreviewOverlay" class="file-preview-overlay">
         <div class="preview-content">
