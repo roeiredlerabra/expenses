@@ -88,14 +88,14 @@
 <div class="quick-add-bar">
     <div class="d-flex gap-3 flex-wrap">
         <button type="button" class="quick-add-button" onclick="quickAdd('fuel')" data-bs-toggle="tooltip"
-            data-bs-placement="top" title="הוסף הוצאת רכב - צרף תמונת קבלה לזיהוי אוטומטי של הפרטים">
+            data-bs-placement="top" title="הוסף הוצאת דלק - צרף תמונת קבלה לזיהוי אוטומטי של הפרטים">
             <i class="fas fa-gas-pump"></i>
-            רכב
+            דלק
         </button>
         <button type="button" class="quick-add-button" onclick="quickAdd('route')" data-bs-toggle="tooltip"
             data-bs-placement="top" title="הוסף החזר קילומטרים">
             <i class="fas fa-route"></i>
-            נסיעה
+            נסיעות
         </button>
         <button type="button" class="quick-add-button" onclick="quickAdd('parking')"
             data-bs-toggle="tooltip" data-bs-placement="top"
@@ -104,7 +104,7 @@
             חניה
         </button>
         <button type="button" class="quick-add-button" onclick="quickAdd('other')" data-bs-toggle="tooltip"
-            data-bs-placement="top" title="הוסף הוצאה אחרת - למשל:  ציוד או הוצאות משרדיות">
+            data-bs-placement="top" title="הוסף הוצאה אחרת - למשל:  ציוד, כיבוד, הוצאות משרדיות">
             <i class="fas fa-receipt"></i>
             הוצאה אחרת
         </button>
@@ -1185,11 +1185,11 @@ configureReviewModeFields() {
       // Add expense items
       items.forEach(item => {
         let expenseType = 'other';
-        if (item.ExpenseType?.toLowerCase().includes('רכב')) {
+        if (item.ExpenseType?.toLowerCase().includes('דלק')) {
           expenseType = 'fuel';
         } else if (item.ExpenseType?.toLowerCase().includes('חניה')) {
           expenseType = 'parking';
-        } else if (item.ExpenseType?.toLowerCase().includes('נסיעה')) {
+        } else if (item.ExpenseType?.toLowerCase().includes('נסיעות')) {
           expenseType = 'route';
         }
         
@@ -2312,7 +2312,7 @@ configureReviewModeFields() {
       let typeLabel, typeIcon, typeClass;
       switch (type) {
         case 'fuel':
-          typeLabel = 'רכב';
+          typeLabel = 'דלק';
           typeIcon = 'gas-pump';
           typeClass = 'fuel';
           break;
@@ -2322,7 +2322,7 @@ configureReviewModeFields() {
           typeClass = 'parking';
           break;
         case 'route': 
-          typeLabel = 'נסיעה';
+          typeLabel = 'נסיעות';
           typeIcon = 'route';
           typeClass = 'route';
           break;
@@ -2613,14 +2613,14 @@ updateLiveTotal() {
         ${ExpenseApp.state.categoryTotals.fuel > 0 ? `
           <div class="category-total-item">
             <i class="fas fa-gas-pump"></i>
-            <span>רכב:</span>
+            <span>דלק:</span>
             <span class="category-amount">${ExpenseApp.state.categoryTotals.fuel.toFixed(2)} ₪</span>
           </div>
         ` : ''}
         ${ExpenseApp.state.categoryTotals.route > 0 ? `
           <div class="category-total-item">
             <i class="fas fa-route"></i>
-            <span>נסיעה:</span>
+            <span>נסיעות:</span>
             <span class="category-amount">${ExpenseApp.state.categoryTotals.route.toFixed(2)} ₪</span>
           </div>
         ` : ''}
@@ -2755,14 +2755,14 @@ setupTotalClickHandlers(floatingTotal) {
             ${ExpenseApp.state.categoryTotals.fuel > 0 ? `
               <div class="category-total-item">
                 <i class="fas fa-gas-pump"></i>
-                <span>רכב:</span>
+                <span>דלק:</span>
                 <span class="category-amount">${ExpenseApp.state.categoryTotals.fuel.toFixed(2)} ₪</span>
               </div>
             ` : ''}
             ${ExpenseApp.state.categoryTotals.route > 0 ? `
               <div class="category-total-item">
                 <i class="fas fa-route"></i>
-                <span>נסיעה:</span>
+                <span>נסיעות:</span>
                 <span class="category-amount">${ExpenseApp.state.categoryTotals.route.toFixed(2)} ₪</span>
               </div>
             ` : ''}
