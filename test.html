@@ -218,7 +218,7 @@
   <script>
     // Global function that works even before the app is initialized
     function quickAdd(type) {
-      console.log("quickAdd called with type:", type);
+      
 
       // If we already have ExpenseBuilder initialized, use it directly
       if (window.ExpenseBuilder && typeof window.ExpenseBuilder.quickAdd === 'function') {
@@ -1310,7 +1310,7 @@
           // Add expense items
           items.forEach(item => {
             // Log the item data for debugging
-            console.log('Populating expense item:', item);
+            
 
             let expenseType = 'other';
             if (item.ExpenseType?.toLowerCase().includes('דלק')) {
