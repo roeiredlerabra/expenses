@@ -1495,7 +1495,7 @@ configureReviewModeFields() {
       // Validate file attachments
       expenseCards.forEach(card => {
         // Check if this is a route expense type (which doesn't require attachments)
-        const isRouteExpense = card.querySelector('.expense-type-route') !== null;
+        const isRouteExpense = card.querySelector('.expense-type-route1') !== null;
         
         // Skip attachment validation for route expenses
         if (isRouteExpense) {
@@ -3928,12 +3928,19 @@ function showAlert() {
 }
 
 function checkAndShowAlert() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const id = urlParams.get("id");
+  
+  // If 'id' parameter exists and is not empty, do not show the alert
+  if (id) return;
+
   const today = luxon.DateTime.now();
-  // אם היום הוא בין 20 ליום האחרון של החודש
+  // If today is between the 20th and the last day of the month
   if (today.day >= 20 && today.day <= today.daysInMonth) {
     showAlert();
   }
 }
+
 
 // Initialize Lucide icons after the page loads
 document.addEventListener('DOMContentLoaded', function() {
