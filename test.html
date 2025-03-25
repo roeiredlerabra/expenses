@@ -67,7 +67,7 @@
                 <div class="row g-3">
                     <div class="col-md-3">
                         <label class="form-label">חודש</label>
-                        <input type="month" class="form-control" name="month" required>
+                        <input type="month" class="form-control" name="month" required disabled>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">אימייל עובד/ת</label>
@@ -2578,8 +2578,14 @@ configureReviewModeFields() {
     // Update live total display with animation
 // Update live total display with animation
 updateLiveTotal() {
-  // Calculate grand total from category totals
-  const totalAmount = Object.values(ExpenseApp.state.categoryTotals).reduce((sum, val) => sum + val, 0);
+  // Calculate monetary total (excluding kilometers)
+  const monetaryTotal = ExpenseApp.state.categoryTotals.fuel + 
+                        ExpenseApp.state.categoryTotals.route + 
+                        ExpenseApp.state.categoryTotals.parking + 
+                        ExpenseApp.state.categoryTotals.other;
+  
+  // Get kilometers total separately
+  const kilometersTotal = ExpenseApp.state.categoryTotals.kilometers;
   
   // Update all total amount elements with animation
   document.querySelectorAll('[id="totalAmount"]').forEach(element => {
@@ -2589,7 +2595,7 @@ updateLiveTotal() {
     
     this.animateNumber(
       currentValue,
-      totalAmount,
+      monetaryTotal, // Only use monetary total here
       {
         duration: 500,
         onUpdate: (value) => {
@@ -2605,7 +2611,7 @@ updateLiveTotal() {
   });
   
   // Update the floating total with detailed breakdown
-  this.updateFloatingTotalWithCategories();
+  this.updateFloatingTotalWithCategories(monetaryTotal, kilometersTotal);
   
   // Update progress
   FormHandler.updateProgress();
@@ -2640,24 +2646,22 @@ updateLiveTotal() {
     },
     
     // Update floating total with category breakdown
-    updateFloatingTotalWithCategories() {
-  const floatingTotal = document.querySelector('.floating-total');
+    updateFloatingTotalWithCategories(monetaryTotal, kilometersTotal) {
+      const floatingTotal = document.querySelector('.floating-total');
   if (!floatingTotal) return;
-  
-  // Calculate grand total
-  const grandTotal = Object.values(ExpenseApp.state.categoryTotals).reduce((sum, val) => sum + val, 0);
   
   // Check if we need to update the floating total structure based on state
   const isReviewMode = ExpenseApp.state.mode === 'review';
   const reviewModeApproved = document.body.classList.contains('status-approved') || 
-                             document.body.classList.contains('status-rejected');
+                           document.body.classList.contains('status-rejected');
   
-  // Generate HTML for both states with current values
+  // Generate HTML for collapsed state with both totals if needed
   const collapsedHTML = `
     <div class="d-flex align-items-center justify-content-between w-100">
       <div class="d-flex align-items-center">
         <div>
-          סה"כ: <span id="totalAmount">${grandTotal.toFixed(2)}</span> ₪
+          סה"כ: <span id="totalAmount">${monetaryTotal.toFixed(2)}</span> ₪
+          ${kilometersTotal > 0 ? ` | <span id="totalKilometers">${kilometersTotal.toFixed(2)}</span> ק"מ` : ''}
         </div>
         <button type="button" class="btn-expand-total ms-2" aria-label="הצג פירוט">
           <i class="fas fa-chevron-up"></i>
@@ -2681,7 +2685,7 @@ updateLiveTotal() {
     </div>
   `;
   
-  // Create expanded state HTML (detailed view) with current values
+  // Create expanded state HTML (detailed view) with both totals
   const expandedHTML = `
     <div class="expanded-total-content w-100">
       <div class="d-flex align-items-center justify-content-between">
@@ -2730,12 +2734,12 @@ updateLiveTotal() {
           </div>
         ` : ''}
         ${ExpenseApp.state.categoryTotals.kilometers > 0 ? `
-  <div class="category-total-item">
-    <i class="fas fa-road"></i>
-    <span>קילומטרים:</span>
-    <span class="category-amount">${ExpenseApp.state.categoryTotals.kilometers.toFixed(2)} ק"מ</span>
-  </div>
-` : ''}
+          <div class="category-total-item">
+            <i class="fas fa-road"></i>
+            <span>קילומטרים:</span>
+            <span class="category-amount">${ExpenseApp.state.categoryTotals.kilometers.toFixed(2)} ק"מ</span>
+          </div>
+        ` : ''}
         ${ExpenseApp.state.categoryTotals.other > 0 ? `
           <div class="category-total-item">
             <i class="fas fa-receipt"></i>
@@ -2744,9 +2748,15 @@ updateLiveTotal() {
           </div>
         ` : ''}
         <div class="category-total-item grand-total">
-          <span>סה"כ:</span>
-          <span class="category-amount" id="totalAmount">${grandTotal.toFixed(2)} ₪</span>
+          <span>סה"כ כספי:</span>
+          <span class="category-amount" id="totalAmount">${monetaryTotal.toFixed(2)} ₪</span>
         </div>
+        ${kilometersTotal > 0 ? `
+          <div class="category-total-item grand-total-kilometers">
+            <span>סה"כ קילומטרים:</span>
+            <span class="category-amount" id="totalKilometers">${kilometersTotal.toFixed(2)} ק"מ</span>
+          </div>
+        ` : ''}
       </div>
     </div>
   `;
@@ -2766,7 +2776,7 @@ updateLiveTotal() {
     if (totalAmountElement) {
       this.animateNumber(
         parseFloat(totalAmountElement.textContent || '0'),
-        grandTotal,
+        monetaryTotal,
         {
           duration: 500,
           onUpdate: (value) => {
@@ -2776,9 +2786,42 @@ updateLiveTotal() {
       );
     }
     
+    // Update kilometers total if needed
+    const totalKilometersElement = floatingTotal.querySelector('#totalKilometers');
+    if (kilometersTotal > 0) {
+      if (totalKilometersElement) {
+        this.animateNumber(
+          parseFloat(totalKilometersElement.textContent || '0'),
+          kilometersTotal,
+          {
+            duration: 500,
+            onUpdate: (value) => {
+              totalKilometersElement.textContent = value.toFixed(2);
+            }
+          }
+        );
+      } else if (floatingTotal.dataset.state === 'collapsed') {
+        // Need to add kilometers total
+        const totalContainer = floatingTotal.querySelector('.d-flex.align-items-center div');
+        if (totalContainer) {
+          totalContainer.innerHTML = `
+            סה"כ: <span id="totalAmount">${monetaryTotal.toFixed(2)}</span> ₪
+            | <span id="totalKilometers">${kilometersTotal.toFixed(2)}</span> ק"מ
+          `;
+        }
+      }
+    } else if (totalKilometersElement) {
+      // Remove kilometers total if no longer needed
+      const totalContainer = floatingTotal.querySelector('.d-flex.align-items-center div');
+      if (totalContainer) {
+        totalContainer.innerHTML = `סה"כ: <span id="totalAmount">${monetaryTotal.toFixed(2)}</span> ₪`;
+      }
+    }
+    
     // If expanded, also update category amounts
     if (floatingTotal.dataset.state === 'expanded') {
-      Object.keys(ExpenseApp.state.categoryTotals).forEach(category => {
+      // Update each category amount
+      ['fuel', 'route', 'parking', 'other'].forEach(category => {
         const amount = ExpenseApp.state.categoryTotals[category];
         if (amount > 0) {
           let selector;
@@ -2805,12 +2848,29 @@ updateLiveTotal() {
         }
       });
       
-      // Also update grand total in expanded view
+      // Update kilometers separately if they exist
+      if (kilometersTotal > 0) {
+        const kilometersItem = floatingTotal.querySelector('.fa-road')?.closest('.category-total-item');
+        if (kilometersItem) {
+          const amountElement = kilometersItem.querySelector('.category-amount');
+          if (amountElement) {
+            const currentValue = parseFloat(amountElement.textContent);
+            this.animateNumber(currentValue, kilometersTotal, {
+              duration: 500,
+              onUpdate: (value) => {
+                amountElement.textContent = value.toFixed(2) + ' ק"מ';
+              }
+            });
+          }
+        }
+      }
+      
+      // Update grand monetary total
       const grandTotalElement = floatingTotal.querySelector('.grand-total .category-amount');
       if (grandTotalElement) {
         this.animateNumber(
           parseFloat(grandTotalElement.textContent),
-          grandTotal,
+          monetaryTotal,
           {
             duration: 500,
             onUpdate: (value) => {
@@ -2819,18 +2879,42 @@ updateLiveTotal() {
           }
         );
       }
+      
+      // Update grand kilometers total if needed
+      if (kilometersTotal > 0) {
+        const grandKilometersElement = floatingTotal.querySelector('.grand-total-kilometers .category-amount');
+        if (grandKilometersElement) {
+          this.animateNumber(
+            parseFloat(grandKilometersElement.textContent),
+            kilometersTotal,
+            {
+              duration: 500,
+              onUpdate: (value) => {
+                grandKilometersElement.textContent = value.toFixed(2) + ' ק"מ';
+              }
+            }
+          );
+        }
+      }
     }
   }
 },// Setup click handlers for expand/collapse
 // Update the setupTotalClickHandlers method in the ExpenseCalculator object
 setupTotalClickHandlers(floatingTotal) {
   floatingTotal.addEventListener('click', (e) => {
-    const grandTotal = Object.values(ExpenseApp.state.categoryTotals).reduce((sum, val) => sum + val, 0);
+    // Calculate monetary total (excluding kilometers)
+    const monetaryTotal = ExpenseApp.state.categoryTotals.fuel + 
+                          ExpenseApp.state.categoryTotals.route + 
+                          ExpenseApp.state.categoryTotals.parking + 
+                          ExpenseApp.state.categoryTotals.other;
+    
+    // Get kilometers total separately
+    const kilometersTotal = ExpenseApp.state.categoryTotals.kilometers;
     
     if (e.target.closest('.btn-expand-total')) {
       floatingTotal.dataset.state = 'expanded';
       
-      // Generate the expanded HTML content here instead of referencing this.expandedHTML
+      // Generate the expanded HTML content with separated totals
       const expandedHTML = `
         <div class="expanded-total-content w-100">
           <div class="d-flex align-items-center justify-content-between">
@@ -2878,6 +2962,13 @@ setupTotalClickHandlers(floatingTotal) {
                 <span class="category-amount">${ExpenseApp.state.categoryTotals.parking.toFixed(2)} ₪</span>
               </div>
             ` : ''}
+            ${ExpenseApp.state.categoryTotals.kilometers > 0 ? `
+              <div class="category-total-item">
+                <i class="fas fa-road"></i>
+                <span>קילומטרים:</span>
+                <span class="category-amount">${ExpenseApp.state.categoryTotals.kilometers.toFixed(2)} ק"מ</span>
+              </div>
+            ` : ''}
             ${ExpenseApp.state.categoryTotals.other > 0 ? `
               <div class="category-total-item">
                 <i class="fas fa-receipt"></i>
@@ -2886,9 +2977,15 @@ setupTotalClickHandlers(floatingTotal) {
               </div>
             ` : ''}
             <div class="category-total-item grand-total">
-              <span>סה"כ:</span>
-              <span class="category-amount" id="totalAmount">${grandTotal.toFixed(2)} ₪</span>
+              <span>סה"כ כספי:</span>
+              <span class="category-amount" id="totalAmount">${monetaryTotal.toFixed(2)} ₪</span>
             </div>
+            ${kilometersTotal > 0 ? `
+              <div class="category-total-item grand-total-kilometers">
+                <span>סה"כ קילומטרים:</span>
+                <span class="category-amount" id="totalKilometers">${kilometersTotal.toFixed(2)} ק"מ</span>
+              </div>
+            ` : ''}
           </div>
         </div>
       `;
@@ -2899,12 +2996,13 @@ setupTotalClickHandlers(floatingTotal) {
     } else if (e.target.closest('.btn-collapse-total')) {
       floatingTotal.dataset.state = 'collapsed';
       
-      // Generate the collapsed HTML content here instead of referencing this.collapsedHTML
+      // Generate the collapsed HTML content with separated totals
       const collapsedHTML = `
         <div class="d-flex align-items-center justify-content-between w-100">
           <div class="d-flex align-items-center">
             <div>
-              סה"כ: <span id="totalAmount">${grandTotal.toFixed(2)}</span> ₪
+              סה"כ: <span id="totalAmount">${monetaryTotal.toFixed(2)}</span> ₪
+              ${kilometersTotal > 0 ? ` | <span id="totalKilometers">${kilometersTotal.toFixed(2)}</span> ק"מ` : ''}
             </div>
             <button type="button" class="btn-expand-total ms-2" aria-label="הצג פירוט">
               <i class="fas fa-chevron-up"></i>
@@ -2937,70 +3035,76 @@ setupTotalClickHandlers(floatingTotal) {
     // Add CSS styles for floating total
     addFloatingTotalStyles() {
       if (document.getElementById('total-expand-css')) return;
-      
-      const totalExpandCss = document.createElement('style');
-      totalExpandCss.id = 'total-expand-css';
-      totalExpandCss.textContent = `
-        .floating-total {
-          transition: all 0.3s ease;
-          overflow: hidden;
-        }
-        
-        .floating-total.expanded {
-          max-height: 240px;
-        }
-        
-        .btn-expand-total, .btn-collapse-total {
-          background: none;
-          border: none;
-          color: var(--bs-primary);
-          cursor: pointer;
-          padding: 0 5px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: transform 0.3s ease;
-        }
-        
-        .btn-expand-total:hover, .btn-collapse-total:hover {
-          transform: translateY(-2px);
-        }
-        
-        .category-totals {
-          background: rgba(var(--bs-primary-rgb), 0.05);
-          border-radius: 8px;
-          padding: 10px;
-        }
-        
-        .category-total-item {
-          display: flex;
-          align-items: center;
-          margin-bottom: 6px;
-          font-size: 0.9rem;
-        }
-        
-        .category-total-item:last-child {
-          margin-bottom: 0;
-        }
-        
-        .category-total-item i {
-          margin-inline-end: 10px;
-          width: 20px;
-          text-align: center;
-        }
-        
-        .category-total-item .category-amount {
-          margin-inline-start: auto;
-          font-weight: 500;
-        }
-        
-        .grand-total {
-          border-top: 1px solid rgba(var(--bs-primary-rgb), 0.2);
-          margin-top: 6px;
-          padding-top: 6px;
-          font-weight: bold;
-        }
-      `;
+  
+  const totalExpandCss = document.createElement('style');
+  totalExpandCss.id = 'total-expand-css';
+  totalExpandCss.textContent = `
+    .floating-total {
+      transition: all 0.3s ease;
+      overflow: hidden;
+    }
+    
+    .floating-total.expanded {
+      max-height: 280px;
+    }
+    
+    .btn-expand-total, .btn-collapse-total {
+      background: none;
+      border: none;
+      color: var(--bs-primary);
+      cursor: pointer;
+      padding: 0 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.3s ease;
+    }
+    
+    .btn-expand-total:hover, .btn-collapse-total:hover {
+      transform: translateY(-2px);
+    }
+    
+    .category-totals {
+      background: rgba(var(--bs-primary-rgb), 0.05);
+      border-radius: 8px;
+      padding: 10px;
+    }
+    
+    .category-total-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+    }
+    
+    .category-total-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .category-total-item i {
+      margin-inline-end: 10px;
+      width: 20px;
+      text-align: center;
+    }
+    
+    .category-total-item .category-amount {
+      margin-inline-start: auto;
+      font-weight: 500;
+    }
+    
+    .grand-total {
+      border-top: 1px solid rgba(var(--bs-primary-rgb), 0.2);
+      margin-top: 6px;
+      padding-top: 6px;
+      font-weight: bold;
+    }
+    
+    .grand-total-kilometers {
+      margin-top: 3px;
+      font-weight: bold;
+      color: var(--bs-primary);
+    }
+  `;
       
       document.head.appendChild(totalExpandCss);
     }
