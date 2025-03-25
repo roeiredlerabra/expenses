@@ -452,6 +452,9 @@ h6 {
     border: 1px solid var(--border-color);
     font-weight: 500;
     transition: all 0.2s ease;
+    border-color: var(--abra-coral);
+    color: var(--abra-coral);
+    position: relative;
 }
 
 .quick-add-button:hover {
@@ -459,7 +462,29 @@ h6 {
     box-shadow: var(--shadow-md);
     background: var(--bg-primary);
 }
-
+.quick-add-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+.coming-soon-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    background-color: var(--abra-yellow);
+    color: white;
+    font-size: 0.75rem;
+    border-radius: var(--radius-full);
+    font-weight: bold;
+    position: absolute;
+    left: -10px;
+    top: -10px;
+}
+.button-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
 /* Theme-specific button colors */
 [data-theme="light"] .quick-add-button {
     border-color: var(--abra-coral);
