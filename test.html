@@ -578,10 +578,11 @@
         setupManagerReviewMode(data) {
           // Get status from the response
           const status = data.expense_main[0].Status.Value;
+          const rejectionReason = data.expense_main[0].Reject_Reason;
           const isFinalized = status === 'Approved' || status === 'Rejected';
 
           // Create or update status header
-          this.createManagerReviewHeader(status);
+          this.createManagerReviewHeader(status, rejectionReason);
 
           // Update form fields
           this.configureReviewModeFields();
@@ -608,43 +609,117 @@
         },
 
         // Create manager review header with status
-        createManagerReviewHeader(status) {
-          // First check if header already exists to avoid duplicates
-          const existingHeader = document.querySelector('.manager-review-header');
-          if (existingHeader) existingHeader.remove();
+        createManagerReviewHeader(status, rejectionReason = '') {
+  // First check if header already exists to avoid duplicates
+  const existingHeader = document.querySelector('.manager-review-header');
+  if (existingHeader) existingHeader.remove();
 
-          // Create the header element
-          const header = document.createElement('div');
-          header.className = 'alert alert-info manager-review-header';
-          header.style.margin = '0';
-          header.style.borderRadius = '0';
+  // Create the header element
+  const header = document.createElement('div');
+  header.className = 'alert alert-info manager-review-header';
+  header.style.margin = '0';
+  header.style.borderRadius = '0';
 
-          // Set header text based on status
-          let headerText = '';
-          if (status === 'Approved') {
-            headerText = 'הדוח אושר על ידי המנהל';
-            header.className = 'alert alert-success manager-review-header';
-          } else if (status === 'Rejected') {
-            headerText = 'הדוח נדחה על ידי המנהל';
-            header.className = 'alert alert-danger manager-review-header';
-          } else {
-            headerText = 'הנך מתבקש/ת לסקור את הדוח ולחתום כמנהל/ת ישיר/ה';
-          }
-
-          header.innerHTML = `
-        <div class="container">
+  // Set header text based on status
+  let headerText = '';
+  if (status === 'Approved') {
+    headerText = 'הדוח אושר על ידי המנהל';
+    header.className = 'alert alert-success manager-review-header';
+    
+    header.innerHTML = `
+      <div class="container">
+        <div class="d-flex align-items-center">
+          <i class="fas fa-info-circle me-2"></i>
+          <div>${headerText}</div>
+        </div>
+      </div>
+    `;
+  } else if (status === 'Rejected') {
+    headerText = 'הדוח נדחה על ידי המנהל';
+    header.className = 'alert alert-danger manager-review-header';
+    
+    header.innerHTML = `
+      <div class="container">
+        <div class="d-flex align-items-center justify-content-between">
           <div class="d-flex align-items-center">
             <i class="fas fa-info-circle me-2"></i>
             <div>${headerText}</div>
           </div>
+          <button type="button" class="btn btn-sm btn-link text-danger p-0 rejection-reason-toggle" onclick="toggleRejectionReason(this)">
+            <i class="fas fa-chevron-down me-1"></i>הצג סיבה
+          </button>
         </div>
-      `;
+        <div class="rejection-reason-container mt-3" style="display: none;">
+          <textarea class="form-control bg-light text-danger" readonly rows="3" 
+            style="resize: none; border-color: rgba(220, 53, 69, 0.3);">${rejectionReason || 'לא צוינה סיבה לדחייה.'}</textarea>
+        </div>
+      </div>
+    `;
+  } else {
+    headerText = 'הנך מתבקש/ת לסקור את הדוח ולחתום כמנהל/ת ישיר/ה';
+    
+    header.innerHTML = `
+      <div class="container">
+        <div class="d-flex align-items-center">
+          <i class="fas fa-info-circle me-2"></i>
+          <div>${headerText}</div>
+        </div>
+      </div>
+    `;
+  }
 
-          const mainHeader = document.querySelector('header.header');
-          if (mainHeader) {
-            mainHeader.parentNode.insertBefore(header, mainHeader.nextSibling);
-          }
-        },
+  const mainHeader = document.querySelector('header.header');
+  if (mainHeader) {
+    mainHeader.parentNode.insertBefore(header, mainHeader.nextSibling);
+  }
+  
+  // Add the toggle function if it doesn't exist yet
+  if (status === 'Rejected' && !window.toggleRejectionReason) {
+    window.toggleRejectionReason = function(button) {
+      const container = button.closest('.alert').querySelector('.rejection-reason-container');
+      const isVisible = container.style.display !== 'none';
+      
+      // Toggle container visibility with animation
+      if (isVisible) {
+        container.style.maxHeight = container.scrollHeight + 'px';
+        setTimeout(() => {
+          container.style.maxHeight = '0';
+          setTimeout(() => {
+            container.style.display = 'none';
+            button.innerHTML = '<i class="fas fa-chevron-down me-1"></i>הצג סיבה';
+          }, 300);
+        }, 10);
+      } else {
+        container.style.display = 'block';
+        container.style.maxHeight = '0';
+        setTimeout(() => {
+          container.style.maxHeight = container.scrollHeight + 'px';
+          button.innerHTML = '<i class="fas fa-chevron-up me-1"></i>הסתר סיבה';
+        }, 10);
+      }
+    };
+    
+    // Add CSS for smooth transitions
+    const style = document.createElement('style');
+    style.textContent = `
+      .rejection-reason-container {
+        overflow: hidden;
+        max-height: 0;
+        transition: max-height 0.3s ease-out;
+      }
+      
+      .rejection-reason-toggle {
+        transition: all 0.2s ease;
+        text-decoration: none !important;
+      }
+      
+      .rejection-reason-toggle:hover {
+        opacity: 0.8;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+},
 
         // Configure form fields for review mode
         configureReviewModeFields() {
