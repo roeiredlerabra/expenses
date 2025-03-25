@@ -7,7 +7,7 @@
 
 A modern, responsive web application for managing employee expense reports with automated receipt processing, digital signatures, and a streamlined approval workflow.
 
-![Screenshot of Expense Report System]([[https://via.placeholder.com/800x400?text=Abra+Expense+Report+System](https://media.licdn.com/dms/image/v2/C4D0BAQH8RXrIA-H-Wg/company-logo_200_200/company-logo_200_200/0/1659272782073?e=2147483647&v=beta&t=c59UA2Jwtt5lgjHuNuYL_dwa2UI86qTVuh7Ix-aFD4I)](https://media.licdn.com/dms/image/v2/C4D0BAQH8RXrIA-H-Wg/company-logo_200_200/company-logo_200_200/0/1659272782073?e=2147483647&v=beta&t=c59UA2Jwtt5lgjHuNuYL_dwa2UI86qTVuh7Ix-aFD4I))
+![Company Logo](https://media.licdn.com/dms/image/v2/C4D0BAQH8RXrIA-H-Wg/company-logo_200_200/0/1659272782073?e=2147483647&v=beta&t=c59UA2Jwtt5lgjHuNuYL_dwa2UI86qTVuh7Ix-aFD4I)
 
 ## 🌟 Features
 
