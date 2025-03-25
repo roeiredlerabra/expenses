@@ -14,7 +14,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.rtl.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="style.css?ver=1.1" rel="stylesheet">
+    <link href="style.css?ver=1.2" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/signature_pad/4.1.5/signature_pad.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css" />
@@ -93,7 +93,7 @@
             דלק
         </button>
         <button type="button" class="quick-add-button" onclick="quickAdd('route')" data-bs-toggle="tooltip"
-            data-bs-placement="top" title="הוסף החזר קילומטרים">
+            data-bs-placement="top" title="הוסף נסיעות בתחבורה ציבורית - למשל: מונית, אוטובוס"</button>
             <i class="fas fa-route"></i>
             נסיעות
         </button>
@@ -103,6 +103,12 @@
             <i class="fas fa-parking"></i>
             חניה
         </button>
+        <button type="button" class="quick-add-button" onclick="quickAdd('kilometers')"
+        data-bs-toggle="tooltip" data-bs-placement="top"
+        title="הוסף הוצאת קילומטרים - ציון מספר הקילומטרים והמטרה של הנסיעה">
+        <i class="fas fa-road"></i>
+      קילומטרים
+          </button>
         <button type="button" class="quick-add-button" onclick="quickAdd('other')" data-bs-toggle="tooltip"
             data-bs-placement="top" title="הוסף הוצאה אחרת - למשל:  ציוד, כיבוד, הוצאות משרדיות">
             <i class="fas fa-receipt"></i>
@@ -224,6 +230,7 @@ function quickAdd(type) {
         fuel: 0,
         route: 0,
         parking: 0,
+        kilometers: 0,
         other: 0
       },
       initialized: false
@@ -338,6 +345,7 @@ function quickAdd(type) {
         fuel: 0,
         route: 0,
         parking: 0,
+        kilometers: 0,
         other: 0
       };
       ExpenseCalculator.updateLiveTotal();
@@ -1177,82 +1185,122 @@ configureReviewModeFields() {
     // Populate expense items
     populateExpenseItems(items) {
       const container = document.getElementById('expensesContainer');
-      container.innerHTML = ''; // Clear existing expenses
-      
-      // Reset category totals before populating
-      ExpenseApp.resetCategoryTotals();
+  container.innerHTML = ''; // Clear existing expenses
+  
+  // Reset category totals before populating
+  ExpenseApp.resetCategoryTotals();
 
-      // Add expense items
-      items.forEach(item => {
-        let expenseType = 'other';
-        if (item.ExpenseType?.toLowerCase().includes('דלק')) {
-          expenseType = 'fuel';
-        } else if (item.ExpenseType?.toLowerCase().includes('חניה')) {
-          expenseType = 'parking';
-        } else if (item.ExpenseType?.toLowerCase().includes('נסיעות')) {
-          expenseType = 'route';
-        }
-        
-        ExpenseBuilder.quickAdd(expenseType);
-        const card = container.firstElementChild;
-        if (!card) return;
-        
-        card.dataset.expenseId = item.ID;
-        card.dataset.expenseType = expenseType;
-        
-        // Populate fields
-        this.populateExpenseItemFields(card, item);
-      });
+  // Add expense items
+  items.forEach(item => {
+    // Log the item data for debugging
+    console.log('Populating expense item:', item);
+    
+    let expenseType = 'other';
+    if (item.ExpenseType?.toLowerCase().includes('דלק')) {
+      expenseType = 'fuel';
+    } else if (item.ExpenseType?.toLowerCase().includes('חניה')) {
+      expenseType = 'parking';
+    } else if (item.ExpenseType?.toLowerCase().includes('נסיעות')) {
+      expenseType = 'route';
+    } else if (item.ExpenseType?.toLowerCase().includes('קילומטרים')) {
+      expenseType = 'kilometers';
+    }
+    
+    ExpenseBuilder.quickAdd(expenseType);
+    const card = container.firstElementChild;
+    if (!card) return;
+    
+    card.dataset.expenseId = item.ID;
+    card.dataset.expenseType = expenseType;
+    
+    // Populate fields
+    this.populateExpenseItemFields(card, item);
+  });
 
-      // Update total and category breakdowns
-      ExpenseCalculator.updateLiveTotal();
-    },
+  // Update total and category breakdowns
+  ExpenseCalculator.updateLiveTotal();
+},
     
     // Populate fields for a single expense item
     populateExpenseItemFields(card, item) {
-      // Convert and set date
-      let expenseDate = '';
-      if (item.ExpenseDate) {
-        try {
-          const date = new Date(item.ExpenseDate);
-          expenseDate = date.toLocaleDateString('en-CA');
-        } catch (error) {
-          console.warn('Invalid date format:', item.ExpenseDate);
-        }
-      }
+    // Convert and set date
+    let expenseDate = '';
+  if (item.ExpenseDate) {
+    try {
+      const date = new Date(item.ExpenseDate);
+      expenseDate = date.toLocaleDateString('en-CA');
+    } catch (error) {
+      console.warn('Invalid date format:', item.ExpenseDate);
+    }
+  }
+  
+  // Get all inputs
+  const dateInput = card.querySelector('input[type="date"]');
+  const invoiceInput = card.querySelector('input[placeholder="הזן מספר חשבונית"]');
+  const amountInput = card.querySelector('.expense-amount');
+  const notesInput = card.querySelector('#note');
+  
+  // Set values and make readonly
+  if (dateInput) {
+    dateInput.value = expenseDate;
+    dateInput.readOnly = true;
+  }
+  
+  if (invoiceInput) {
+    invoiceInput.value = item.InvoiceNumber || '';
+    invoiceInput.readOnly = true;
+  }
+  
+  // Handle amount field - special handling for kilometers expenses
+  if (amountInput) {
+    const amount = parseFloat(item.Amount) || 0;
+    amountInput.value = amount;
+    amountInput.readOnly = true;
+    
+    // Add to category total
+    const expenseType = card.dataset.expenseType;
+    ExpenseApp.state.categoryTotals[expenseType] += amount;
+  }
+  
+  // Handle notes field - check for both lowercase and uppercase property names
+  if (notesInput) {
+    notesInput.value = item.Notes || item.notes || '';
+    notesInput.readOnly = true;
+  }
       
-      // Get all inputs
-      const dateInput = card.querySelector('input[type="date"]');
-      const invoiceInput = card.querySelector('input[placeholder="הזן מספר חשבונית"]');
-      const amountInput = card.querySelector('.expense-amount');
-      const notesInput = card.querySelector('#note');
+  // Special handling for kilometers expenses
+  if (card.dataset.expenseType === 'kilometers') {
+    // For kilometers expenses, we interpret the Amount field as distance in kilometers
+    if (amountInput) {
+      // Make sure placeholder reflects kilometers
+      amountInput.placeholder = "לדוגמה: 2.3";
       
-      // Set values and make readonly
-      if (dateInput) {
-        dateInput.value = expenseDate;
-        dateInput.readOnly = true;
+      // Update the input group text to show kilometers instead of currency
+      const inputGroupText = amountInput.nextElementSibling;
+      if (inputGroupText && inputGroupText.classList.contains('input-group-text')) {
+        inputGroupText.textContent = 'ק"מ';
       }
-      
-      if (invoiceInput) {
-        invoiceInput.value = item.InvoiceNumber || '';
-        invoiceInput.readOnly = true;
-      }
-      
-      if (amountInput) {
-        const amount = parseFloat(item.Amount) || 0;
-        amountInput.value = amount;
-        amountInput.readOnly = true;
-        
-        // Add to category total
-        const expenseType = card.dataset.expenseType;
-        ExpenseApp.state.categoryTotals[expenseType] += amount;
-      }
-      
-      if (notesInput) {
-        notesInput.value = item.notes || '';
-        notesInput.readOnly = true;
-      }
-    },
+    }
+    
+    // For kilometers, notes are required and should contain journey purpose
+    if (notesInput) {
+      notesInput.placeholder = "מטרת נסיעה ויעד";
+      notesInput.required = true;
+    }
+    
+    // Hide file drop zone and preview for kilometers expenses if they exist
+    const fileDropZone = card.querySelector('.file-drop-zone');
+    if (fileDropZone) {
+      fileDropZone.style.display = 'none';
+    }
+    
+    const filePreview = card.querySelector('.file-preview');
+    if (filePreview) {
+      filePreview.style.display = 'none';
+    }
+  }
+}
+,
     
     // Populate signatures from retrieved data
     populateSignatures(signatures) {
@@ -2301,106 +2349,156 @@ configureReviewModeFields() {
     // Quick add expense card based on type
     quickAdd(type) {
       const container = document.getElementById('expensesContainer');
-      if (!container) return;
-      
-      const today = new Date().toISOString().split('T')[0];
+  if (!container) return;
+  
+  const today = new Date().toISOString().split('T')[0];
 
-      const card = document.createElement('div');
-      card.className = 'expense-card animate__animated animate__fadeIn';
-      card.dataset.expenseType = type; // Store expense type for category tracking
+  const card = document.createElement('div');
+  card.className = 'expense-card animate__animated animate__fadeIn';
+  card.dataset.expenseType = type; // Store expense type for category tracking
 
-      let typeLabel, typeIcon, typeClass;
-      switch (type) {
-        case 'fuel':
-          typeLabel = 'דלק';
-          typeIcon = 'gas-pump';
-          typeClass = 'fuel';
-          break;
-        case 'parking':
-          typeLabel = 'חניה';
-          typeIcon = 'parking';
-          typeClass = 'parking';
-          break;
-        case 'route': 
-          typeLabel = 'נסיעות';
-          typeIcon = 'route';
-          typeClass = 'route';
-          break;
-        case 'other':
-          typeLabel = 'הוצאה אחרת';
-          typeIcon = 'receipt';
-          typeClass = 'other';
-          break;
-      }
+  let typeLabel, typeIcon, typeClass;
+  switch (type) {
+    case 'fuel':
+      typeLabel = 'דלק';
+      typeIcon = 'gas-pump';
+      typeClass = 'fuel';
+      break;
+    case 'parking':
+      typeLabel = 'חניה';
+      typeIcon = 'parking';
+      typeClass = 'parking';
+      break;
+    case 'route': 
+      typeLabel = 'נסיעות';
+      typeIcon = 'route';
+      typeClass = 'route';
+      break;
+    case 'kilometers':
+      typeLabel = 'קילומטרים';
+      typeIcon = 'road';
+      typeClass = 'kilometers';
+      break;
+    case 'other':
+      typeLabel = 'הוצאה אחרת';
+      typeIcon = 'receipt';
+      typeClass = 'other';
+      break;
+  }
 
-      card.innerHTML = `
-        <div class="expense-type-indicator expense-type-${typeClass}">
-          <i class="fas fa-${typeIcon}"></i>
-          ${typeLabel}
+  if (type === 'kilometers') {
+    card.innerHTML = `
+      <div class="expense-type-indicator expense-type-${typeClass}">
+        <i class="fas fa-${typeIcon}"></i>
+        ${typeLabel}
+      </div>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">תאריך</label>
+          <input type="date" class="form-control" value="${today}" required>
         </div>
-        <div class="row g-3">
-          <div class="col-md-3">
-            <label class="form-label">תאריך</label>
-            <input type="date" class="form-control" value="${today}" required>
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">מספר חשבונית</label>
-            <input type="text" class="form-control" placeholder="הזן מספר חשבונית" required>
-          </div>
-          <div class="col-md-4">
-            <label class="form-label">סכום</label>
-            <div class="input-group">
-              <input type="number" step="0.01" class="form-control expense-amount" required>
-              <span class="input-group-text">₪</span>
-            </div>
-          </div>
-          <div class="col-md-2">
-            <button type="button" class="btn btn-outline-danger w-100" onclick="ExpenseBuilder.removeExpenseRow(this)">
-              <i class="fas fa-trash"></i>
-            </button>
-          </div>
-          <div class="col-md-12">
-            <label class="form-label">הערות נוספות</label>
-            <textarea class="form-control" id="note" rows="2" placeholder="הוסף הערות או פרטים נוספים לגבי ההוצאה (לא חובה)"></textarea>
-          </div>
-          <div class="col-12">
-            <div class="file-drop-zone" ondrop="FileHandler.handleFileDrop(event, this)" 
-                 ondragover="FileHandler.handleDragOver(event)" 
-                 ondragleave="FileHandler.handleDragLeave(event)">
-              <i class="fas fa-cloud-upload-alt mb-2" style="font-size: 2rem;"
-                 data-bs-toggle="tooltip"
-                 data-bs-placement="top"
-                 title="צלם את הקבלה באמצעות הטלפון או גרור לכאן קובץ PDF"></i>
-              <div>גרור קבצים לכאן או לחץ להעלאה</div>
-              <div class="text-muted">(תמונות או PDF בלבד)</div>
-              <input type="file" class="d-none" accept="image/*,.pdf" multiple 
-                     onchange="FileHandler.handleFileSelect(event, this.parentElement)">
-            </div>
-            <div class="file-preview"></div>
+        <div class="col-md-6">
+          <label class="form-label">מרחק (ק"מ)</label>
+          <div class="input-group">
+            <input type="number" step="0.1" min="0.1" class="form-control expense-amount" placeholder="לדוגמה: 2.3" required>
+            <span class="input-group-text">ק"מ</span>
           </div>
         </div>
-      `;
+        <div class="col-md-2">
+          <button type="button" class="btn btn-outline-danger w-100" onclick="ExpenseBuilder.removeExpenseRow(this)">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+        <div class="col-md-12">
+          <label class="form-label">הערות נוספות</label>
+          <textarea class="form-control" id="note" rows="2" placeholder="הוסף מטרת נסיעה ויעד" required></textarea>
+        </div>
+      </div>
+    `;
+  } else {
+    // Original HTML structure for other expense types
+    card.innerHTML = `
+      <div class="expense-type-indicator expense-type-${typeClass}">
+        <i class="fas fa-${typeIcon}"></i>
+        ${typeLabel}
+      </div>
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">תאריך</label>
+          <input type="date" class="form-control" value="${today}" required>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">מספר חשבונית</label>
+          <input type="text" class="form-control" placeholder="הזן מספר חשבונית" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">סכום</label>
+          <div class="input-group">
+            <input type="number" step="0.01" class="form-control expense-amount" required>
+            <span class="input-group-text">₪</span>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <button type="button" class="btn btn-outline-danger w-100" onclick="ExpenseBuilder.removeExpenseRow(this)">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+        <div class="col-md-12">
+          <label class="form-label">הערות נוספות</label>
+          <textarea class="form-control" id="note" rows="2" placeholder="הוסף הערות או פרטים נוספים לגבי ההוצאה (לא חובה)"></textarea>
+        </div>
+        <div class="col-12">
+          <div class="file-drop-zone" ondrop="FileHandler.handleFileDrop(event, this)" 
+               ondragover="FileHandler.handleDragOver(event)" 
+               ondragleave="FileHandler.handleDragLeave(event)">
+            <i class="fas fa-cloud-upload-alt mb-2" style="font-size: 2rem;"
+               data-bs-toggle="tooltip"
+               data-bs-placement="top"
+               title="צלם את הקבלה באמצעות הטלפון או גרור לכאן קובץ PDF"></i>
+            <div>גרור קבצים לכאן או לחץ להעלאה</div>
+            <div class="text-muted">(תמונות או PDF בלבד)</div>
+            <input type="file" class="d-none" accept="image/*,.pdf" multiple 
+                   onchange="FileHandler.handleFileSelect(event, this.parentElement)">
+          </div>
+          <div class="file-preview"></div>
+        </div>
+      </div>
+    `;
+  }
 
-      container.insertBefore(card, container.firstChild);
-      
-      // Set up real-time expense amount tracking
-      const amountInput = card.querySelector('.expense-amount');
-      amountInput.addEventListener('input', function() {
-        ExpenseCalculator.updateExpenseAmount(this, type);
-      });
-      
-      // Add click handler for file upload zone
-      const dropZone = card.querySelector('.file-drop-zone');
+  container.insertBefore(card, container.firstChild);
+  
+  // Set up real-time expense amount tracking
+  const amountInput = card.querySelector('.expense-amount');
+  amountInput.addEventListener('input', function() {
+    ExpenseCalculator.updateExpenseAmount(this, type);
+  });
+  
+  // Add click handler for file upload zone ONLY if this is not a kilometers expense
+  if (type !== 'kilometers') {
+    const dropZone = card.querySelector('.file-drop-zone');
+    if (dropZone) { // Add a null check for safety
       dropZone.addEventListener('click', () => {
         dropZone.querySelector('input[type="file"]').click();
       });
-      
-      // Initialize tooltips
-      UIManager.initTooltips();
-      
-      // Return the created card for chaining
-      return card;
-    },
+    }
+  }
+  
+  // Initialize tooltips
+  UIManager.initTooltips();
+  
+  // Additional handling for review mode
+  if (ExpenseApp.state.mode === 'review') {
+    // Hide delete buttons in review mode
+    const deleteButton = card.querySelector('.btn-outline-danger');
+    if (deleteButton) {
+      deleteButton.style.display = 'none';
+    }
+  }
+  
+  // Return the created card for chaining
+  return card;
+},
     
     // Remove expense row
     removeExpenseRow(button) {
@@ -2631,6 +2729,13 @@ updateLiveTotal() {
             <span class="category-amount">${ExpenseApp.state.categoryTotals.parking.toFixed(2)} ₪</span>
           </div>
         ` : ''}
+        ${ExpenseApp.state.categoryTotals.kilometers > 0 ? `
+  <div class="category-total-item">
+    <i class="fas fa-road"></i>
+    <span>קילומטרים:</span>
+    <span class="category-amount">${ExpenseApp.state.categoryTotals.kilometers.toFixed(2)} ק"מ</span>
+  </div>
+` : ''}
         ${ExpenseApp.state.categoryTotals.other > 0 ? `
           <div class="category-total-item">
             <i class="fas fa-receipt"></i>

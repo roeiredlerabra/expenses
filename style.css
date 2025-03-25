@@ -513,6 +513,10 @@ h6 {
     background-color: var(--coral-light);
     color: var(--abra-navy);
 }
+.expense-type-kilometers {
+    background-color: var(--coral-light);
+    color: var(--abra-yellow);
+}
 .expense-type-parking {
     background-color: var(--pink-light);
     color: var(--abra-pink);
@@ -875,7 +879,10 @@ box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     background-color: rgba(255, 119, 72, 0.2);
     color: var(--abra-white);
 }
-
+[data-theme="dark"] .expense-type-kiometers {
+    background-color: rgba(255, 119, 72, 0.2);
+    color: var(--abra-yellow);
+}
 [data-theme="dark"] .expense-type-parking {
     background-color: rgba(255, 82, 136, 0.2);
     color: var(--abra-pink);
