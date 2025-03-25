@@ -1772,7 +1772,7 @@
 
             const data = {
               employeeInfo: {
-                month: formData.get('month'),
+                month: document.querySelector('input[name="month"]').value,
                 email: formData.get('employeeEmail'),
                 managerEmail: formData.get('managerEmail')
               },
