@@ -1929,28 +1929,32 @@
 
         // Get signature color based on theme
         getSignatureColor() {
-          const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
-          return isDarkMode ? '#ffffff' : '#121f3f'; // White for dark mode, Abra navy for light mode
+         
+          return '#1d86f6'; // White for dark mode, Abra navy for light mode
         },
 
         // Update signature colors when theme changes
         updateSignatureColors() {
-          const newColor = this.getSignatureColor();
+  const newColor = this.getSignatureColor();
 
-          Object.values(this.signaturePads).forEach(pad => {
-            if (pad) {
-              // If pad is not empty, save data, update color, and redraw
-              if (!pad.isEmpty()) {
-                const data = pad.toData();
-                pad.penColor = newColor;
-                pad.clear();
-                pad.fromData(data);
-              } else {
-                pad.penColor = newColor;
-              }
-            }
-          });
-        },
+  Object.values(this.signaturePads).forEach(pad => {
+    if (pad) {
+      pad.penColor = newColor;
+      
+      // Force redraw of existing signatures when theme changes
+      const canvas = pad.canvas;
+      if (canvas && canvas.dataset.originalSignature) {
+        // If there's a stored original signature, redraw it
+        this.drawSignatureToCanvas(canvas, canvas.dataset.originalSignature, pad);
+      } else if (!pad.isEmpty()) {
+        // If pad has data but no stored original, preserve the data and redraw
+        const data = pad.toData();
+        pad.clear();
+        pad.fromData(data);
+      }
+    }
+  });
+},
 
         // Clear a signature pad
         clearSignature(id) {
